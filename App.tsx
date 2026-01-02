@@ -15,7 +15,7 @@ import { BrowserViewMode, Tab } from './types';
 import { Star, Mic, Plus, CheckCircle, Camera, Monitor, Pencil, LogOut, Shield, Languages, X } from 'lucide-react';
 import { useTabs } from './hooks/useTabs';
 import { normalizeUrl, getDisplayTitle, cleanUrlForDisplay } from './utils/urlUtils';
-import { AddressBar } from './components/AddressBar';
+import AddressBar from './components/AddressBar';
 import { useVoiceSearch } from './hooks/useVoiceSearch';
 import { useGestures } from './hooks/useGestures';
 import { AnimatePresence } from 'framer-motion';
