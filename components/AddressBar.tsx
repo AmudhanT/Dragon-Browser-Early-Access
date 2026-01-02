@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import { Search, Globe, Lock } from "lucide-react";
-import { useDragon } from "../DragonContext";
 import { useDragonAI } from "../hooks/useDragonAI";
 import { Tab } from "../types";
 
@@ -20,7 +19,6 @@ const AddressBar: React.FC<AddressBarProps> = ({
   onFocus,
 }) => {
   const { fetchSuggestions, setSuggestions } = useDragonAI();
-  const { history, bookmarks } = useDragon();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -71,7 +69,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
         value={urlInputValue}
         onChange={(e) => onUrlChange(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && onUrlSubmit()}
-        onFocus={() => onFocus?.()}
+        onFocus={onFocus}
         className="flex-1 bg-transparent outline-none text-white text-sm"
         placeholder="Search or enter address"
         autoComplete="off"
