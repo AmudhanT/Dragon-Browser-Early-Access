@@ -12,11 +12,9 @@ import { Bookmarks } from './pages/Bookmarks';
 import { Library } from './pages/Library';
 import { NotesLibrary } from './pages/NotesLibrary';
 
-import { MainMenu } from './components/MainMenu';
-import { TabSwitcher } from './components/TabSwitcher';
 import AddressBar from './components/AddressBar';
 
-import { BrowserViewMode, Tab } from './types';
+import { BrowserViewMode } from './types';
 import { Star, Plus } from 'lucide-react';
 
 import { useTabs } from './hooks/useTabs';
@@ -41,15 +39,12 @@ const AppContent: React.FC = () => {
 
   const {
     tabs,
-    tabGroups,
     activeTab,
     goBack,
     navigateTab,
     setTabLoading,
     createTab,
     reloadTab,
-    setActiveTabId,
-    closeTab,
   } = useTabs(settings.stealthFlight, settings.searchEngine);
 
   const viewportRefs = useRef<Map<string, BrowserViewportHandle>>(new Map());
@@ -59,7 +54,7 @@ const AppContent: React.FC = () => {
   const [showExitToast, setShowExitToast] = useState(false);
 
   /* =========================
-     THEME SYNC
+     THEME
   ========================= */
 
   useEffect(() => {
@@ -70,11 +65,10 @@ const AppContent: React.FC = () => {
         window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     root.classList.toggle('dark', dark);
-    root.style.colorScheme = dark ? 'dark' : 'light';
   }, [settings.themeMode]);
 
   /* =========================
-     SMART BACK
+     BACK BUTTON
   ========================= */
 
   const handleSmartBack = useCallback(() => {
@@ -116,6 +110,7 @@ const AppContent: React.FC = () => {
         settings.searchEngine,
         settings.httpsOnlyMode
       );
+
       setUrlInputValue(cleanUrlForDisplay(normalized));
       addHistory({ url: normalized, title: getDisplayTitle(normalized) });
       navigateTab(normalized);
@@ -123,6 +118,11 @@ const AppContent: React.FC = () => {
     },
     [settings.searchEngine, settings.httpsOnlyMode, navigateTab, addHistory, setViewMode]
   );
+
+  const handleOpenInNewTab = (url: string) => {
+    createTab(false);
+    navigateTab(url);
+  };
 
   const isBookmarked = bookmarks.some(b => b.url === activeTab.url);
   const isHomePage = activeTab.url === 'dragon://home';
@@ -132,7 +132,7 @@ const AppContent: React.FC = () => {
   ========================= */
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black text-slate-900 dark:text-white overflow-hidden">
+    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black">
 
       {/* HEADER */}
       {viewMode === BrowserViewMode.BROWSER && !isHomePage && (
@@ -174,16 +174,14 @@ const AppContent: React.FC = () => {
                 {tab.url === 'dragon://home' ? (
                   <NewTabPage
                     onNavigate={handleNavigate}
-                    onOpenInNewTab={() => {}}
+                    onOpenInNewTab={handleOpenInNewTab}
                     onTriggerSearch={() => {}}
                   />
                 ) : (
                   <>
                     <FireProgressBar isLoading={tab.isLoading} themeColor="#f97316" />
                     <BrowserViewport
-                      ref={el => {
-                        if (el) viewportRefs.current.set(tab.id, el);
-                      }}
+                      ref={el => el && viewportRefs.current.set(tab.id, el)}
                       activeTab={tab}
                       onLoadStart={() => setTabLoading(true)}
                       onLoadEnd={() => setTabLoading(false)}
@@ -204,39 +202,32 @@ const AppContent: React.FC = () => {
         {viewMode !== BrowserViewMode.BROWSER && (
           <div className="absolute inset-0 bg-slate-50 dark:bg-black">
 
-            {[
-              BrowserViewMode.SETTINGS,
-              BrowserViewMode.GENERAL,
-              BrowserViewMode.APPEARANCE,
-              BrowserViewMode.PRIVACY,
-              BrowserViewMode.SITE_SETTINGS,
-              BrowserViewMode.STORAGE,
-              BrowserViewMode.LANGUAGES,
-              BrowserViewMode.ABOUT,
-            ].includes(viewMode) && <Settings />}
+            {(viewMode === BrowserViewMode.SETTINGS ||
+              viewMode === BrowserViewMode.GENERAL ||
+              viewMode === BrowserViewMode.APPEARANCE ||
+              viewMode === BrowserViewMode.PRIVACY ||
+              viewMode === BrowserViewMode.SITE_SETTINGS ||
+              viewMode === BrowserViewMode.STORAGE ||
+              viewMode === BrowserViewMode.LANGUAGES ||
+              viewMode === BrowserViewMode.ABOUT) && <Settings />}
 
-            {viewMode === BrowserViewMode.DOWNLOADS && <Downloads />}
-            {viewMode === BrowserViewMode.HISTORY && <History />}
-            {viewMode === BrowserViewMode.BOOKMARKS && <Bookmarks />}
-            {viewMode === BrowserViewMode.LIBRARY && <Library />}
-            {viewMode === BrowserViewMode.NOTES_LIBRARY && <NotesLibrary />}
+            {viewMode === BrowserViewMode.DOWNLOADS && (
+              <Downloads onNavigate={handleNavigate} />
+            )}
 
-            {viewMode === BrowserViewMode.TAB_SWITCHER && (
-              <TabSwitcher
-                tabs={tabs}
-                tabGroups={tabGroups}
-                activeTabId={activeTab.id}
-                onSelectTab={setActiveTabId}
-                onCloseTab={closeTab}
-                onDuplicateTab={() => {}}
-                onCreateGroup={() => {}}
-                onDeleteGroup={() => {}}
-                onUpdateGroup={() => {}}
-                onMoveTabToGroup={() => {}}
-                onUngroupTab={() => {}}
-                onExit={() => setViewMode(BrowserViewMode.BROWSER)}
+            {viewMode === BrowserViewMode.HISTORY && (
+              <History
+                onNavigate={handleNavigate}
+                onOpenInNewTab={handleOpenInNewTab}
               />
             )}
+
+            {viewMode === BrowserViewMode.BOOKMARKS && (
+              <Bookmarks onNavigate={handleNavigate} />
+            )}
+
+            {viewMode === BrowserViewMode.LIBRARY && <Library />}
+            {viewMode === BrowserViewMode.NOTES_LIBRARY && <NotesLibrary />}
           </div>
         )}
       </main>
