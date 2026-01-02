@@ -304,64 +304,165 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   const t = (key: string) =>
     translations[settings.language]?.[key] || key;
 
+  /* ---------- VIEW / NAVIGATION ---------- */
+
+const [viewMode, setViewMode] = useState<BrowserViewMode>(
+  BrowserViewMode.BROWSER
+);
+
+const navigateBack = () => {
+  setViewMode(BrowserViewMode.BROWSER);
+};
+
+const navigateTo = (mode: BrowserViewMode) => {
+  setViewMode(mode);
+};
+
+/* ---------- IMAGE CONTEXT MENU ---------- */
+
+const [imageContextMenuData, setImageContextMenuData] =
+  useState<ImageContextData | null>(null);
+
+const openImageContextMenu = (url: string) => {
+  setImageContextMenuData({ url });
+};
+
+const closeImageContextMenu = () => {
+  setImageContextMenuData(null);
+};
+
+/* ---------- MEDIA ---------- */
+
+const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
+
+const playMedia = (
+  url: string,
+  filename: string,
+  type: 'video' | 'audio' | 'image'
+) => {
+  setActiveMedia({ url, filename, type });
+};
+
+const closeMedia = () => {
+  setActiveMedia(null);
+};
+
+const [mediaInfoData, setMediaInfoData] =
+  useState<MediaInfoData | null>(null);
+
+const openMediaInfo = (
+  url: string,
+  type: 'image' | 'video' | 'audio'
+) => {
+  setMediaInfoData({ url, type });
+};
+
+const closeMediaInfo = () => {
+  setMediaInfoData(null);
+};
+
+/* ---------- DOWNLOAD HELPERS ---------- */
+
+const pauseDownload = (id: string) => {};
+const resumeDownload = (id: string) => {};
+const cancelDownload = (id: string) => {};
+const updateDownloadPriority = (
+  id: string,
+  priority: DownloadPriority
+) => {};
+const moveDownloadOrder = (
+  id: string,
+  direction: 'up' | 'down'
+) => {};
+const removeDownloads = (ids: string[]) => {
+  setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
+};
+
+/* ---------- ANALYTICS ---------- */
+
+const incrementTrackers = (count: number) => {
+  setSettings(prev => ({
+    ...prev,
+    trackersBlockedTotal: prev.trackersBlockedTotal + count,
+  }));
+};
+
+const incrementDataSaved = (bytes: number) => {
+  setSettings(prev => ({
+    ...prev,
+    dataSaved: prev.dataSaved + bytes,
+  }));
+};
+
+/* ---------- APP ---------- */
+
+const purgeAllData = () => {
+  setHistory([]);
+  setBookmarks([]);
+  setDownloads([]);
+  setNotes([]);
+  setSavedPages([]);
+};
+
+const architect = 'Amudhan T';
+
   /* ---------- CONTEXT VALUE ---------- */
 return (
     <DragonContext.Provider
-      value={{
-        settings,
-        updateSettings,
-        history,
-        addHistory,
-        clearHistory,
-        bookmarks,
-        toggleBookmark,
-        downloads,
-        addDownload,
-        removeDownload,
+  value={{
+    settings,
+    updateSettings,
+    history,
+    addHistory,
+    clearHistory,
+    bookmarks,
+    toggleBookmark,
+    downloads,
+    addDownload,
+    removeDownload,
 
-        viewMode,
-        setViewMode,
+    pauseDownload,
+    resumeDownload,
+    updateDownloadPriority,
+    moveDownloadOrder,
+    removeDownloads,
 
-        notes,
-        addNote,
-        removeNote,
+    viewMode,
+    setViewMode,
+    navigateBack,
+    navigateTo,
 
-        sitePermissionRegistry,
-        getSitePermissions,
-        updateSitePermissions,
-        resetSitePermissions,
+    notes,
+    addNote,
+    removeNote,
 
-        savedPages,
-        savePageOffline,
-        deleteSavedPage,
-        getOfflineContent,
+    sitePermissionRegistry,
+    getSitePermissions,
+    updateSitePermissions,
+    resetSitePermissions,
 
-        imageContextMenuData,
-        openImageContextMenu,
-        closeImageContextMenu,
+    savedPages,
+    savePageOffline,
+    deleteSavedPage,
+    getOfflineContent,
 
-        pauseDownload,
-        resumeDownload,
-        updateDownloadPriority,
-        moveDownloadOrder,
-        removeDownloads,
+    imageContextMenuData,
+    openImageContextMenu,
+    closeImageContextMenu,
 
-        playMedia,
-        architect,
+    incrementTrackers,
+    incrementDataSaved,
 
-        navigateBack,
-        incrementTrackers,
-        incrementDataSaved,
+    activeMedia,
+    playMedia,
+    closeMedia,
 
-        activeMedia,
-        closeMedia,
-        mediaInfoData,
-        closeMediaInfo,
+    mediaInfoData,
+    openMediaInfo,
+    closeMediaInfo,
 
-        t,
-      }}
-    >
-      {children}
-    </DragonContext.Provider>
-  );
-};
+    purgeAllData,
+    architect,
+    t,
+  }}
+>
