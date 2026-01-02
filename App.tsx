@@ -127,12 +127,12 @@ const AppContent: React.FC = () => {
   const isBookmarked = bookmarks.some(b => b.url === activeTab.url);
   const isHomePage = activeTab.url === 'dragon://home';
 
-  /* =========================
+/* =========================
      RENDER
   ========================= */
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black">
+    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black text-slate-900 dark:text-white overflow-hidden">
 
       {/* HEADER */}
       {viewMode === BrowserViewMode.BROWSER && !isHomePage && (
@@ -142,21 +142,23 @@ const AppContent: React.FC = () => {
             urlInputValue={urlInputValue}
             onUrlChange={setUrlInputValue}
             onUrlSubmit={() => handleNavigate(urlInputValue)}
-            onFocus={() => {}}
           />
+
           <button onClick={() => createTab(false)}>
             <Plus size={18} />
           </button>
+
           <button onClick={() => toggleBookmark(activeTab.url, activeTab.title)}>
             <Star size={18} fill={isBookmarked ? 'currentColor' : 'none'} />
           </button>
         </header>
       )}
 
+      {/* MAIN */}
       <main className="flex-1 relative overflow-hidden">
 
         {showExitToast && (
-          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 bg-black text-white px-4 py-2 rounded-full text-xs">
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-xs bg-black text-white px-4 py-2 rounded">
             Press back again to exit
           </div>
         )}
@@ -170,7 +172,19 @@ const AppContent: React.FC = () => {
                 className={`absolute inset-0 ${tab.id === activeTab.id ? 'block' : 'hidden'}`}
               >
                 {tab.url === 'dragon://home' ? (
-                  <NewTabPage onNavigate={handleNavigate} />
+                  <NewTabPage
+                    onNavigate={handleNavigate}
+                    onOpenInNewTab={(url) => {
+                      const normalized = normalizeUrl(
+                        url,
+                        settings.searchEngine,
+                        settings.httpsOnlyMode
+                      );
+                      const id = Math.random().toString(36).slice(2);
+                      setActiveTabId(id);
+                      navigateTab(normalized);
+                    }}
+                  />
                 ) : (
                   <>
                     <FireProgressBar isLoading={tab.isLoading} themeColor="#f97316" />
@@ -191,6 +205,53 @@ const AppContent: React.FC = () => {
             ))}
           </>
         )}
+
+        {/* OTHER SCREENS */}
+        {viewMode !== BrowserViewMode.BROWSER && (
+          <div className="absolute inset-0 bg-slate-50 dark:bg-black">
+            {[
+              BrowserViewMode.SETTINGS,
+              BrowserViewMode.GENERAL,
+              BrowserViewMode.APPEARANCE,
+              BrowserViewMode.PRIVACY,
+              BrowserViewMode.SITE_SETTINGS,
+              BrowserViewMode.STORAGE,
+              BrowserViewMode.LANGUAGES,
+              BrowserViewMode.ABOUT,
+            ].includes(viewMode) && <Settings />}
+
+            {viewMode === BrowserViewMode.DOWNLOADS && (
+              <Downloads onNavigate={handleNavigate} />
+            )}
+
+            {viewMode === BrowserViewMode.HISTORY && (
+              <History onNavigate={handleNavigate} />
+            )}
+
+            {viewMode === BrowserViewMode.BOOKMARKS && (
+              <Bookmarks onNavigate={handleNavigate} />
+            )}
+
+            {viewMode === BrowserViewMode.LIBRARY && <Library />}
+
+            {viewMode === BrowserViewMode.NOTES_LIBRARY && <NotesLibrary />}
+
+            {viewMode === BrowserViewMode.TAB_SWITCHER && (
+              <TabSwitcher
+                tabs={tabs}
+                tabGroups={tabGroups}
+                activeTabId={activeTab.id}
+                onSelectTab={setActiveTabId}
+                onCloseTab={closeTab}
+                onNewTab={() => createTab(false)}
+              />
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
 
         {/* NON-BROWSER */}
         {viewMode !== BrowserViewMode.BROWSER && (
