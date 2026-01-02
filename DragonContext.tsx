@@ -210,38 +210,45 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
 
-  const addDownload = (url: string, filename: string) =>
-    setDownloads(prev => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        url,
-        filename,
-        status: 'queued',
-        progress: 0,
-        receivedBytes: 0,
-        speed: '',
-        totalBytes: 0,
-        size: 0,
-        timestamp: Date.now(),
-        resumable: false,
-        priority: 'normal',
-        queueIndex: prev.length,
-        type: 'other',
-      },
-    ]);
+const addDownload = (url: string, filename: string) =>
+  setDownloads(prev => [
+    ...prev,
+    {
+      id: crypto.randomUUID(),
+      url,
+      filename,
+      status: 'queued',
+      progress: 0,
+      receivedBytes: 0,
+      speed: '',
+      totalBytes: 0,
+      size: 0, // REQUIRED by DownloadItem
+      timestamp: Date.now(),
+      resumable: false,
+      priority: 'normal',
+      queueIndex: prev.length,
+      type: 'other',
+    },
+  ]);
 
-  const removeDownload = (id: string) =>
-    setDownloads(prev => prev.filter(d => d.id !== id));
+const removeDownload = (id: string) =>
+  setDownloads(prev => prev.filter(d => d.id !== id));
 
-  const removeDownloads = (ids: string[]) =>
-    setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
+const removeDownloads = (ids: string[]) =>
+  setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
 
-  const pauseDownload = () => {};
-  const resumeDownload = () => {};
-  const cancelDownload = () => {};
-  const updateDownloadPriority = () => {};
-  const moveDownloadOrder = () => {};
+// ✅ FIXED: signatures now match DragonContextType
+const pauseDownload = (_id: string) => {};
+const resumeDownload = (_id: string) => {};
+const cancelDownload = (_id: string) => {};
+const updateDownloadPriority = (
+  _id: string,
+  _priority: DownloadPriority
+) => {};
+const moveDownloadOrder = (
+  _id: string,
+  _direction: 'up' | 'down'
+) => {};
 
   /* ---------- VIEW ---------- */
 
