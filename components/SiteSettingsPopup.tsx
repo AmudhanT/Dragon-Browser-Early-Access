@@ -31,8 +31,8 @@ export const SiteSettingsPopup: React.FC<SiteSettingsPopupProps> = ({ isOpen, on
 
   // For booleans (JS, Cookies, Images, Autoplay, Force Dark)
   const toggleBoolean = (key: keyof SitePermissions) => {
-    updateSitePermissions(url, { [key]: !permissions[key] });
-  };
+  updateSitePermissions(url, { [key]: Boolean(!permissions[key]) });
+};
 
   // For tri-state
   const setPermissionState = (key: keyof SitePermissions, state: PermissionState) => {
