@@ -1,20 +1,30 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { useDragon } from '../DragonContext';
 import DragonHeader from '../components/DragonHeader';
 import {
-  Palette, Search, Check, Monitor,
-  ChevronRight, Zap, ShieldCheck,
-  Download, Upload,
-  Clock, Trash2, LayoutGrid, Sun, Moon,
-  Info, Mic, Globe, Sparkles, Plus, Image as ImageIcon, Code, BellOff,
-  Camera, RefreshCcw,
-  Smartphone, Bell, PlayCircle, Square, MapPin, Cookie, Database, Ghost, FileText,
-  Settings as SettingsIcon, Languages,
-  WifiOff, Volume2, Clipboard, ChevronDown, CheckCircle, Eraser, Shield, Radar
+  Palette,
+  ChevronRight,
+  ShieldCheck,
+  Clock,
+  Trash2,
+  LayoutGrid,
+  Sun,
+  Moon,
+  Info,
+  Globe,
+  Database,
+  Ghost,
+  Settings as SettingsIcon,
+  Languages,
+  Volume2,
+  Clipboard,
+  ChevronDown,
+  CheckCircle,
+  Shield,
+  Radar,
 } from 'lucide-react';
 
 import {
-  SearchEngine,
   AppSettings,
   ThemeMode,
   ToolbarConfig,
@@ -22,19 +32,7 @@ import {
   BrowserViewMode,
 } from '../types';
 
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { LANGUAGE_OPTIONS } from '../utils/i18n';
-
-/* =========================
-   WALLPAPERS
-========================= */
-
-const WALLPAPER_PRESETS = [
-  { id: 'default', name: 'Dragon', url: 'https://i.ibb.co/CKVTVSbg/IMG-20251221-WA0021.jpg' },
-  { id: 'void', name: 'Void', url: '' },
-  { id: 'neon_tokyo', name: 'Neon City', url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1920&auto=format&fit=crop' },
-  { id: 'deep_space', name: 'Cosmos', url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1920&auto=format&fit=crop' },
-];
 
 /* =========================
    SETTINGS PAGE
@@ -44,25 +42,14 @@ const Settings: React.FC = () => {
   const {
     settings,
     updateSettings,
+    viewMode,
     setViewMode,
-    navigateTo,
     navigateBack,
     t,
-    checkAndRequestNotificationPermission,
     purgeAllData,
-    architect,
-    clearGlobalData,
   } = useDragon();
 
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [clearingState, setClearingState] = useState<string | null>(null);
-  const [languageSearchQuery, setLanguageSearchQuery] = useState('');
-
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  /* =========================
-     SAFETY GUARD
-  ========================= */
 
   if (!settings) {
     return (
@@ -80,34 +67,8 @@ const Settings: React.FC = () => {
     updateSettings({ [key]: !settings[key] });
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateSettings({ wallpaper: reader.result as string });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleToolbarToggle = (key: keyof ToolbarConfig) => {
-    updateSettings({
-      toolbarConfig: {
-        ...settings.toolbarConfig,
-        [key]: !settings.toolbarConfig[key],
-      },
-    });
-  };
-
-  const handleClearGlobalData = async (type: 'cookies' | 'cache') => {
-    setClearingState(type);
-    await clearGlobalData(type);
-    setTimeout(() => setClearingState(null), 1200);
-  };
-
   /* =========================
-     UI COMPONENTS
+     UI
   ========================= */
 
   const renderToggle = (
@@ -121,8 +82,17 @@ const Settings: React.FC = () => {
         <div className="p-2 rounded-xl">{icon}</div>
         <span className="text-xs font-bold uppercase">{label}</span>
       </div>
-      <button onClick={onToggle} className="w-12 h-7 rounded-full bg-slate-300">
-        <div className={`w-5 h-5 bg-white rounded-full transition ${value ? 'translate-x-6' : 'translate-x-1'}`} />
+      <button
+        onClick={onToggle}
+        className={`w-12 h-7 rounded-full relative ${
+          value ? 'bg-dragon-ember' : 'bg-slate-300'
+        }`}
+      >
+        <div
+          className={`absolute top-1 w-5 h-5 bg-white rounded-full transition ${
+            value ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
       </button>
     </div>
   );
@@ -137,8 +107,6 @@ const Settings: React.FC = () => {
         { id: BrowserViewMode.GENERAL, label: t('general'), icon: <SettingsIcon size={18} /> },
         { id: BrowserViewMode.APPEARANCE, label: t('appearance'), icon: <Palette size={18} /> },
         { id: BrowserViewMode.PRIVACY, label: t('privacy'), icon: <ShieldCheck size={18} /> },
-        { id: BrowserViewMode.SITE_SETTINGS, label: t('site_settings'), icon: <Globe size={18} /> },
-        { id: BrowserViewMode.STORAGE, label: t('storage'), icon: <Database size={18} /> },
         { id: BrowserViewMode.LANGUAGES, label: t('languages'), icon: <Languages size={18} /> },
         { id: BrowserViewMode.ABOUT, label: t('about'), icon: <Info size={18} /> },
       ].map(item => (
@@ -148,7 +116,9 @@ const Settings: React.FC = () => {
           className="w-full flex items-center gap-4 p-5 bg-white dark:bg-dragon-navy/50 rounded-2xl border"
         >
           {item.icon}
-          <span className="flex-1 text-left text-xs font-bold uppercase">{item.label}</span>
+          <span className="flex-1 text-left text-xs font-bold uppercase">
+            {item.label}
+          </span>
           <ChevronRight size={18} />
         </button>
       ))}
@@ -156,13 +126,23 @@ const Settings: React.FC = () => {
   );
 
   /* =========================
-     PRIVACY PAGE (EXAMPLE)
+     PRIVACY PAGE
   ========================= */
 
   const renderPrivacySettings = () => (
     <div className="space-y-6">
-      {renderToggle('Ad Blocker', settings.adBlockEnabled, () => handleToggle('adBlockEnabled'), <Shield />)}
-      {renderToggle('Do Not Track', settings.doNotTrack, () => handleToggle('doNotTrack'), <Radar />)}
+      {renderToggle(
+        'Ad Blocker',
+        settings.adBlockEnabled,
+        () => handleToggle('adBlockEnabled'),
+        <Shield />
+      )}
+      {renderToggle(
+        'Do Not Track',
+        settings.doNotTrack,
+        () => handleToggle('doNotTrack'),
+        <Radar />
+      )}
 
       <button
         onClick={() => {
@@ -170,17 +150,17 @@ const Settings: React.FC = () => {
         }}
         className="w-full p-4 bg-red-500/10 text-red-500 rounded-xl font-bold"
       >
-        Clear All Data
+        <Trash2 size={16} /> Clear All Data
       </button>
     </div>
   );
 
   /* =========================
-     RENDER SWITCH
+     VIEW SWITCH
   ========================= */
 
   const renderContent = () => {
-    switch (settings.viewMode) {
+    switch (viewMode) {
       case BrowserViewMode.PRIVACY:
         return renderPrivacySettings();
       default:
@@ -200,10 +180,6 @@ const Settings: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export const Settings: React.FC<{ mode: BrowserViewMode }> = ({ mode }) => {
-  ...
 };
 
 export default Settings;
