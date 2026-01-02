@@ -12,10 +12,11 @@ import { Bookmarks } from './pages/Bookmarks';
 import { Library } from './pages/Library';
 import { NotesLibrary } from './pages/NotesLibrary';
 
+import { MainMenu } from './components/MainMenu';
 import { TabSwitcher } from './components/TabSwitcher';
 import AddressBar from './components/AddressBar';
 
-import { BrowserViewMode } from './types';
+import { BrowserViewMode, Tab } from './types';
 import { Star, Plus } from 'lucide-react';
 
 import { useTabs } from './hooks/useTabs';
@@ -98,9 +99,9 @@ const AppContent: React.FC = () => {
   }, [viewMode, navigateBack, goBack, activeTab.currentIndex]);
 
   useEffect(() => {
-    const sub = CapacitorApp.addListener('backButton', handleSmartBack);
+    const listener = CapacitorApp.addListener('backButton', handleSmartBack);
     return () => {
-      sub.then(s => s.remove());
+      listener.then(l => l.remove());
     };
   }, [handleSmartBack]);
 
@@ -115,7 +116,6 @@ const AppContent: React.FC = () => {
         settings.searchEngine,
         settings.httpsOnlyMode
       );
-
       setUrlInputValue(cleanUrlForDisplay(normalized));
       addHistory({ url: normalized, title: getDisplayTitle(normalized) });
       navigateTab(normalized);
@@ -174,7 +174,7 @@ const AppContent: React.FC = () => {
                 {tab.url === 'dragon://home' ? (
                   <NewTabPage
                     onNavigate={handleNavigate}
-                    onOpenInNewTab={(url) => handleNavigate(url)}
+                    onOpenInNewTab={() => {}}
                     onTriggerSearch={() => {}}
                   />
                 ) : (
@@ -203,6 +203,7 @@ const AppContent: React.FC = () => {
         {/* OTHER SCREENS */}
         {viewMode !== BrowserViewMode.BROWSER && (
           <div className="absolute inset-0 bg-slate-50 dark:bg-black">
+
             {[
               BrowserViewMode.SETTINGS,
               BrowserViewMode.GENERAL,
@@ -214,27 +215,9 @@ const AppContent: React.FC = () => {
               BrowserViewMode.ABOUT,
             ].includes(viewMode) && <Settings />}
 
-            {viewMode === BrowserViewMode.DOWNLOADS && (
-              <Downloads
-                onNavigate={handleNavigate}
-                onOpenInNewTab={(url) => handleNavigate(url)}
-              />
-            )}
-
-            {viewMode === BrowserViewMode.HISTORY && (
-              <History
-                onNavigate={handleNavigate}
-                onOpenInNewTab={(url) => handleNavigate(url)}
-              />
-            )}
-
-            {viewMode === BrowserViewMode.BOOKMARKS && (
-              <Bookmarks
-                onNavigate={handleNavigate}
-                onOpenInNewTab={(url) => handleNavigate(url)}
-              />
-            )}
-
+            {viewMode === BrowserViewMode.DOWNLOADS && <Downloads />}
+            {viewMode === BrowserViewMode.HISTORY && <History />}
+            {viewMode === BrowserViewMode.BOOKMARKS && <Bookmarks />}
             {viewMode === BrowserViewMode.LIBRARY && <Library />}
             {viewMode === BrowserViewMode.NOTES_LIBRARY && <NotesLibrary />}
 
@@ -245,7 +228,13 @@ const AppContent: React.FC = () => {
                 activeTabId={activeTab.id}
                 onSelectTab={setActiveTabId}
                 onCloseTab={closeTab}
-                onCreateTab={() => createTab(false)}
+                onDuplicateTab={() => {}}
+                onCreateGroup={() => {}}
+                onDeleteGroup={() => {}}
+                onUpdateGroup={() => {}}
+                onMoveTabToGroup={() => {}}
+                onUngroupTab={() => {}}
+                onExit={() => setViewMode(BrowserViewMode.BROWSER)}
               />
             )}
           </div>
