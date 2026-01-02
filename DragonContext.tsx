@@ -18,6 +18,7 @@ import {
   DownloadPriority,
   ImageContextData,
   SavedPage,
+  MediaInfoData   // ✅ ADD THIS ONLY
 } from './types';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
@@ -62,6 +63,18 @@ interface DragonContextType {
   imageContextMenuData: ImageContextData | null;
   openImageContextMenu: (url: string) => void;
   closeImageContextMenu: () => void;
+
+  // Downloads (advanced)
+pauseDownload: (id: string) => void;
+resumeDownload: (id: string) => void;
+updateDownloadPriority: (id: string, priority: DownloadPriority) => void;
+moveDownloadOrder: (id: string, direction: 'up' | 'down') => void;
+
+// Media
+playMedia: (url: string, filename: string, type: 'video' | 'audio' | 'image') => void;
+
+// App info
+architect: string;
 
   // Navigation
   navigateBack: () => void;
