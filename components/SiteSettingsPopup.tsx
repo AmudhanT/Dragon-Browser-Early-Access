@@ -69,8 +69,9 @@ export const SiteSettingsPopup: React.FC<SiteSettingsPopupProps> = ({ isOpen, on
     icon: React.ReactNode,
     inverseLabel?: boolean
   }) => {
-    const currentState = permissions[itemKey];
-    const isBoolean = typeof currentState === 'boolean';
+    const rawState = permissions[itemKey];
+const isBoolean = typeof rawState === 'boolean' || typeof rawState === 'number';
+const currentState = isBoolean ? Boolean(rawState) : rawState;
     const isOpen = openDropdown === itemKey;
 
     const displayStateText = () => {
