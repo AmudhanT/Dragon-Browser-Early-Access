@@ -2,16 +2,13 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Globe, Lock } from 'lucide-react';
 import { useDragon } from '../DragonContext';
 import { useDragonAI } from '../hooks/useDragonAI';
-import { Tab, SearchEngine } from '../types';
+import { Tab } from '../types';
 
 interface AddressBarProps {
   activeTab: Tab;
   urlInputValue: string;
   onUrlChange: (val: string) => void;
   onUrlSubmit: () => void;
-  onReload: () => void;
-  accentColor: string;
-  onSiteSettingsClick?: () => void;
   onFocus?: () => void;
 }
 
@@ -20,16 +17,12 @@ const AddressBar: React.FC<AddressBarProps> = ({
   urlInputValue,
   onUrlChange,
   onUrlSubmit,
-  onReload,
-  accentColor,
-  onSiteSettingsClick,
   onFocus,
 }) => {
   const { suggestions: aiSuggestions, fetchSuggestions, setSuggestions } =
     useDragonAI();
-  const { history, bookmarks, settings } = useDragon();
+  const { history, bookmarks } = useDragon();
 
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -53,7 +46,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
     if (!urlInputValue) return [];
 
     const query = urlInputValue.toLowerCase().trim();
-    const items: any[] = [];
+    const items: { label: string; value: string; score: number }[] = [];
     const seen = new Set<string>();
 
     const score = (text: string, base: number) => {
@@ -92,42 +85,23 @@ const AddressBar: React.FC<AddressBarProps> = ({
     return items.sort((a, b) => b.score - a.score).slice(0, 6);
   }, [urlInputValue, bookmarks, history, aiSuggestions]);
 
-  const getSearchEngineLogo = (engine: SearchEngine) => {
-    if (engine === 'google') {
-      return (
-        <img
-          src="https://www.google.com/favicon.ico"
-          className="w-4 h-4"
-          alt="Google"
-        />
-      );
-    }
-    return <Search className="w-4 h-4 text-orange-500" />;
-  };
-
   const getSiteIcon = () => {
     if (activeTab.isPrivate) {
       return <Lock className="w-4 h-4 text-purple-500" />;
     }
 
-    let domain = '';
     try {
-      domain = new URL(activeTab.url).hostname;
+      const domain = new URL(activeTab.url).hostname;
+      return (
+        <img
+          src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`}
+          className="w-4 h-4 rounded-sm"
+          alt=""
+        />
+      );
     } catch {
       return <Globe className="w-4 h-4 text-slate-400" />;
     }
-
-    return (
-      <img
-        src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`}
-        className="w-4 h-4 rounded-sm"
-        onError={e => {
-          (e.target as HTMLImageElement).src =
-            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTQ5OThmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+';
-        }}
-        alt=""
-      />
-    );
   };
 
   return (
@@ -138,14 +112,11 @@ const AddressBar: React.FC<AddressBarProps> = ({
         value={urlInputValue}
         onChange={e => onUrlChange(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && onUrlSubmit()}
-        onFocus={() => {
-          setShowSuggestions(true);
-          onFocus?.();
-        }}
-        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+        onFocus={onFocus}
         className="flex-1 bg-transparent outline-none text-white"
         placeholder="Search or enter address"
       />
+      <Search className="w-4 h-4 text-orange-500 opacity-70" />
     </div>
   );
 };
