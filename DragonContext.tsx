@@ -24,6 +24,16 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { translations } from './utils/i18n';
 
 /* =========================
+   EXTRA TYPES (REQUIRED)
+========================= */
+
+export interface Shortcut {
+  id: string;
+  name: string;
+  url: string;
+}
+
+/* =========================
    CONTEXT TYPES
 ========================= */
 
@@ -34,6 +44,8 @@ interface DragonContextType {
   history: HistoryItem[];
   addHistory: (item: Omit<HistoryItem, 'id' | 'timestamp'>) => void;
   clearHistory: () => void;
+  removeHistoryItem: (id: string) => void;
+  removeHistoryItems: (ids: string[]) => void;
 
   bookmarks: Bookmark[];
   toggleBookmark: (url: string, title: string) => void;
@@ -63,6 +75,7 @@ interface DragonContextType {
   getSitePermissions: (url: string) => SitePermissions;
   updateSitePermissions: (url: string, updates: Partial<SitePermissions>) => void;
   resetSitePermissions: (url: string) => void;
+  clearSiteData: (url: string, type: 'cookies' | 'cache') => Promise<void>;
 
   savedPages: SavedPage[];
   savePageOffline: (url: string, title: string) => Promise<boolean>;
@@ -80,6 +93,11 @@ interface DragonContextType {
   mediaInfoData: MediaInfoData | null;
   openMediaInfo: (url: string, type: 'image' | 'video' | 'audio') => void;
   closeMediaInfo: () => void;
+
+  speedDial: Shortcut[];
+  addShortcut: (name: string, url: string) => void;
+  removeShortcut: (id: string) => void;
+  updateSpeedDial: (items: Shortcut[]) => void;
 
   incrementTrackers: (count: number) => void;
   incrementDataSaved: (bytes: number) => void;
@@ -148,6 +166,10 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
     ]);
 
   const clearHistory = () => setHistory([]);
+  const removeHistoryItem = (id: string) =>
+    setHistory(prev => prev.filter(h => h.id !== id));
+  const removeHistoryItems = (ids: string[]) =>
+    setHistory(prev => prev.filter(h => !ids.includes(h.id)));
 
   /* ---------- BOOKMARKS ---------- */
 
@@ -186,7 +208,6 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const removeDownload = (id: string) =>
     setDownloads(prev => prev.filter(d => d.id !== id));
-
   const removeDownloads = (ids: string[]) =>
     setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
 
@@ -196,10 +217,9 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateDownloadPriority = () => {};
   const moveDownloadOrder = () => {};
 
-  /* ---------- VIEW / NAV ---------- */
+  /* ---------- VIEW ---------- */
 
   const [viewMode, setViewMode] = useState(BrowserViewMode.BROWSER);
-
   const navigateTo = (mode: BrowserViewMode) => setViewMode(mode);
   const navigateBack = () => setViewMode(BrowserViewMode.BROWSER);
 
@@ -218,36 +238,18 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   const removeNote = (id: string) =>
     setNotes(prev => prev.filter(n => n.id !== id));
 
-  /* ---------- IMAGE CONTEXT ---------- */
+  /* ---------- SPEED DIAL ---------- */
 
-  const [imageContextMenuData, setImageContextMenuData] =
-    useState<ImageContextData | null>(null);
+  const [speedDial, setSpeedDial] = useState<Shortcut[]>([]);
 
-  const openImageContextMenu = (url: string) =>
-    setImageContextMenuData({ url });
+  const addShortcut = (name: string, url: string) =>
+    setSpeedDial(prev => [...prev, { id: crypto.randomUUID(), name, url }]);
 
-  const closeImageContextMenu = () =>
-    setImageContextMenuData(null);
+  const removeShortcut = (id: string) =>
+    setSpeedDial(prev => prev.filter(s => s.id !== id));
 
-  /* ---------- MEDIA ---------- */
-
-  const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
-
-  const playMedia = (
-    url: string,
-    filename: string,
-    type: 'video' | 'audio' | 'image'
-  ) => setActiveMedia({ url, filename, type });
-
-  const closeMedia = () => setActiveMedia(null);
-
-  const [mediaInfoData, setMediaInfoData] =
-    useState<MediaInfoData | null>(null);
-
-  const openMediaInfo = (url: string, type: 'image' | 'video' | 'audio') =>
-    setMediaInfoData({ url, type });
-
-  const closeMediaInfo = () => setMediaInfoData(null);
+  const updateSpeedDial = (items: Shortcut[]) =>
+    setSpeedDial(items);
 
   /* ---------- SITE PERMS ---------- */
 
@@ -273,6 +275,8 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
       delete copy[new URL(url).hostname];
       return copy;
     });
+
+  const clearSiteData = async () => {};
 
   /* ---------- OFFLINE ---------- */
 
@@ -323,6 +327,7 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
     setDownloads([]);
     setNotes([]);
     setSavedPages([]);
+    setSpeedDial([]);
   };
 
   const architect = 'Amudhan T';
@@ -338,6 +343,8 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
         history,
         addHistory,
         clearHistory,
+        removeHistoryItem,
+        removeHistoryItems,
         bookmarks,
         toggleBookmark,
         downloads,
@@ -362,6 +369,7 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
         getSitePermissions,
         updateSitePermissions,
         resetSitePermissions,
+        clearSiteData,
         savedPages,
         savePageOffline,
         deleteSavedPage,
@@ -375,6 +383,10 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
         mediaInfoData,
         openMediaInfo,
         closeMediaInfo,
+        speedDial,
+        addShortcut,
+        removeShortcut,
+        updateSpeedDial,
         incrementTrackers,
         incrementDataSaved,
         purgeAllData,
