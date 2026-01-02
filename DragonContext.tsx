@@ -173,50 +173,61 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
 
   /* ---------- BOOKMARKS ---------- */
 
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-
-  const toggleBookmark = (url: string, title: string) =>
-    setBookmarks(prev =>
-      prev.some(b => b.url === url)
-        ? prev.filter(b => b.url !== url)
-        : [...prev, { id: crypto.randomUUID(), url, title }]
-    );
+  const toggleBookmark = (url: string, title: string) => {
+  setBookmarks(prev => {
+    const exists = prev.find(b => b.url === url);
+    if (exists) {
+      return prev.filter(b => b.url !== url);
+    }
+    return [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        url,
+        title,
+      } as Bookmark,
+    ];
+  });
+};
 
   /* ---------- DOWNLOADS ---------- */
 
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
 
-  const addDownload = (url: string, filename: string) =>
-    setDownloads(prev => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        url,
-        filename,
-        status: 'queued',
-        progress: 0,
-        receivedBytes: 0,
-        speed: '',
-        totalBytes: 0,
-        timestamp: Date.now(),
-        resumable: false,
-        priority: 'normal',
-        queueIndex: prev.length,
-        type: 'other',
-      },
-    ]);
+const addDownload = (url: string, filename: string) => {
+  const item: DownloadItem = {
+    id: crypto.randomUUID(),
+    url,
+    filename,
+    status: 'queued',
+    progress: 0,
+    receivedBytes: 0,
+    speed: '',
+    totalBytes: 0,
+    timestamp: Date.now(),
+    resumable: false,
+    priority: 'normal',
+    queueIndex: downloads.length,
+    type: 'other',
+  };
 
-  const removeDownload = (id: string) =>
-    setDownloads(prev => prev.filter(d => d.id !== id));
-  const removeDownloads = (ids: string[]) =>
-    setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
+  setDownloads(prev => [...prev, item]);
+};
 
-  const pauseDownload = () => {};
-  const resumeDownload = () => {};
-  const cancelDownload = () => {};
-  const updateDownloadPriority = () => {};
-  const moveDownloadOrder = () => {};
+const removeDownload = (id: string) => {
+  setDownloads(prev => prev.filter(d => d.id !== id));
+};
 
+const removeDownloads = (ids: string[]) => {
+  setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
+};
+
+// stubs (safe – required by context)
+const pauseDownload = (_id: string) => {};
+const resumeDownload = (_id: string) => {};
+const cancelDownload = (_id: string) => {};
+const updateDownloadPriority = (_id: string, _priority: DownloadPriority) => {};
+const moveDownloadOrder = (_id: string, _direction: 'up' | 'down') => {};
   /* ---------- VIEW ---------- */
 
   const [viewMode, setViewMode] = useState(BrowserViewMode.BROWSER);
@@ -251,6 +262,48 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateSpeedDial = (items: Shortcut[]) =>
     setSpeedDial(items);
 
+  /* ---------- IMAGE CONTEXT ---------- */
+
+const [imageContextMenuData, setImageContextMenuData] =
+  useState<ImageContextData | null>(null);
+
+const openImageContextMenu = (url: string) => {
+  setImageContextMenuData({ url });
+};
+
+const closeImageContextMenu = () => {
+  setImageContextMenuData(null);
+};
+
+/* ---------- MEDIA ---------- */
+
+const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
+
+const playMedia = (
+  url: string,
+  filename: string,
+  type: 'video' | 'audio' | 'image'
+) => {
+  setActiveMedia({ url, filename, type });
+};
+
+const closeMedia = () => {
+  setActiveMedia(null);
+};
+
+const [mediaInfoData, setMediaInfoData] =
+  useState<MediaInfoData | null>(null);
+
+const openMediaInfo = (
+  url: string,
+  type: 'image' | 'video' | 'audio'
+) => {
+  setMediaInfoData({ url, type });
+};
+
+const closeMediaInfo = () => {
+  setMediaInfoData(null);
+};
   /* ---------- SITE PERMS ---------- */
 
   const [sitePermissionRegistry, setSitePermissionRegistry] =
