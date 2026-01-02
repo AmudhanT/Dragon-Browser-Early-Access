@@ -473,33 +473,14 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  useEffect(() => {
-  const interval = setInterval(() => {
-    setDownloads(prev =>
-      prev.map(d =>
-        d.id === id
-          ? {
-              ...d,
-              status: status as DownloadItem['status'],
-              progress,
-              receivedBytes,
-              speed,
-            }
-          : d
+  
+          
       )
     );
   }, 1000);
 
-  return () => clearInterval(interval); // 👈 REQUIRED
-}, []);
-          const elapsedMs = now - sim.startTime;
-          const calculatedReceived = Math.min(elapsedMs * sim.speedBytesPerMs, sim.totalBytes);
-          const progress = Math.min((calculatedReceived / sim.totalBytes) * 100, 100);
-          if (progress >= 100) {
-             hasUpdates = true;
-             delete downloadSims.current[d.id];
-             notifyComplete(sim.notificationId, d.filename);
-             return { ...d, status: 'completed', progress: 100, receivedBytes: sim.totalBytes, speed: 'Completed' };
+  return () => clearInterval(interval);
+}, []);rn { ...d, status: 'completed', progress: 100, receivedBytes: sim.totalBytes, speed: 'Completed' };
           }
           if (progress - sim.lastProgress > 5) {
              sim.lastProgress = progress;
