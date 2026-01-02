@@ -1,0 +1,32 @@
+<!-- Internet access -->
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<!-- Downloads & storage (Android 13 and below) -->
+<uses-permission
+    android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
+<uses-permission
+    android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    android:maxSdkVersion="28" />
+
+<!-- Android 13+ media access -->
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+<!-- Camera (for websites, QR, uploads) -->
+<uses-permission android:name="android.permission.CAMERA" />
+
+<!-- Microphone (voice search, sites like Meet) -->
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+<!-- Location (websites asking location) -->
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+<!-- Notifications (downloads, alerts) -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+<!-- Picture-in-Picture (videos) -->
+<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
