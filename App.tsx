@@ -4,6 +4,7 @@ import { DragonProvider, useDragon } from './DragonContext';
 import { NewTabPage } from './components/NewTabPage';
 import { BrowserViewport, BrowserViewportHandle } from './components/BrowserViewport';
 import { FireProgressBar } from './components/FireProgressBar';
+
 import Settings from './pages/Settings';
 import { Downloads } from './pages/Downloads';
 import { History } from './pages/History';
@@ -16,18 +17,12 @@ import { TabSwitcher } from './components/TabSwitcher';
 import AddressBar from './components/AddressBar';
 
 import { BrowserViewMode, Tab } from './types';
-import { Star, Mic, Plus, CheckCircle, Camera, Monitor, Pencil, LogOut, Shield, Languages, X } from 'lucide-react';
+import { Star, Plus } from 'lucide-react';
 
 import { useTabs } from './hooks/useTabs';
 import { normalizeUrl, getDisplayTitle, cleanUrlForDisplay } from './utils/urlUtils';
-import { useVoiceSearch } from './hooks/useVoiceSearch';
-import { useGestures } from './hooks/useGestures';
 
-import { SplashScreen } from './components/SplashScreen';
 import { App as CapacitorApp } from '@capacitor/app';
-import { VoiceOverlay } from './components/VoiceOverlay';
-
-import { LANGUAGE_OPTIONS } from './utils/i18n';
 
 /* =========================
    APP CONTENT
@@ -38,16 +33,15 @@ const AppContent: React.FC = () => {
     settings,
     viewMode,
     setViewMode,
-    updateSettings,
     addHistory,
     bookmarks,
     toggleBookmark,
-    addDownload,
     navigateBack,
   } = useDragon();
 
   const {
     tabs,
+    tabGroups,
     activeTab,
     goBack,
     navigateTab,
@@ -55,16 +49,14 @@ const AppContent: React.FC = () => {
     createTab,
     reloadTab,
     setActiveTabId,
-    setTabs,
+    closeTab,
   } = useTabs(settings.stealthFlight, settings.searchEngine);
 
   const viewportRefs = useRef<Map<string, BrowserViewportHandle>>(new Map());
   const lastBackPress = useRef(0);
 
   const [urlInputValue, setUrlInputValue] = useState('');
-  const [showBookmarkToast, setShowBookmarkToast] = useState(false);
   const [showExitToast, setShowExitToast] = useState(false);
-  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
 
   /* =========================
      THEME SYNC
@@ -82,7 +74,7 @@ const AppContent: React.FC = () => {
   }, [settings.themeMode]);
 
   /* =========================
-     SMART BACK HANDLER
+     SMART BACK
   ========================= */
 
   const handleSmartBack = useCallback(() => {
@@ -107,8 +99,10 @@ const AppContent: React.FC = () => {
   }, [viewMode, navigateBack, goBack, activeTab.currentIndex]);
 
   useEffect(() => {
-    CapacitorApp.addListener('backButton', handleSmartBack);
-    return () => CapacitorApp.removeAllListeners();
+    const listener = CapacitorApp.addListener('backButton', handleSmartBack);
+    return () => {
+      listener.then(l => l.remove());
+    };
   }, [handleSmartBack]);
 
   /* =========================
@@ -117,18 +111,18 @@ const AppContent: React.FC = () => {
 
   const handleNavigate = useCallback(
     (input: string) => {
-      const normalized = normalizeUrl(input, settings.searchEngine, settings.httpsOnlyMode);
+      const normalized = normalizeUrl(
+        input,
+        settings.searchEngine,
+        settings.httpsOnlyMode
+      );
       setUrlInputValue(cleanUrlForDisplay(normalized));
       addHistory({ url: normalized, title: getDisplayTitle(normalized) });
       navigateTab(normalized);
       setViewMode(BrowserViewMode.BROWSER);
     },
-    [settings, navigateTab, addHistory, setViewMode]
+    [settings.searchEngine, settings.httpsOnlyMode, navigateTab, addHistory, setViewMode]
   );
-
-  /* =========================
-     UI FLAGS
-  ========================= */
 
   const isBookmarked = bookmarks.some(b => b.url === activeTab.url);
   const isHomePage = activeTab.url === 'dragon://home';
@@ -138,7 +132,7 @@ const AppContent: React.FC = () => {
   ========================= */
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black text-slate-900 dark:text-white overflow-hidden">
+    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black">
 
       {/* HEADER */}
       {viewMode === BrowserViewMode.BROWSER && !isHomePage && (
@@ -148,24 +142,23 @@ const AppContent: React.FC = () => {
             urlInputValue={urlInputValue}
             onUrlChange={setUrlInputValue}
             onUrlSubmit={() => handleNavigate(urlInputValue)}
-            onFocus={() => setIsSearchOverlayOpen(true)}
+            onFocus={() => {}}
           />
-          <button onClick={() => createTab(false)}><Plus size={18} /></button>
+          <button onClick={() => createTab(false)}>
+            <Plus size={18} />
+          </button>
           <button onClick={() => toggleBookmark(activeTab.url, activeTab.title)}>
             <Star size={18} fill={isBookmarked ? 'currentColor' : 'none'} />
           </button>
         </header>
       )}
 
-      {/* MAIN */}
       <main className="flex-1 relative overflow-hidden">
 
-        {showBookmarkToast && (
-          <div className="toast">Bookmarked</div>
-        )}
-
         {showExitToast && (
-          <div className="toast">Press back again to exit</div>
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 bg-black text-white px-4 py-2 rounded-full text-xs">
+            Press back again to exit
+          </div>
         )}
 
         {/* BROWSER */}
@@ -199,26 +192,40 @@ const AppContent: React.FC = () => {
           </>
         )}
 
-        {/* NON-BROWSER VIEWS */}
+        {/* NON-BROWSER */}
         {viewMode !== BrowserViewMode.BROWSER && (
           <div className="absolute inset-0 z-10 bg-slate-50 dark:bg-black">
-            {viewMode === BrowserViewMode.SETTINGS ||
-             viewMode === BrowserViewMode.GENERAL ||
-             viewMode === BrowserViewMode.APPEARANCE ||
-             viewMode === BrowserViewMode.PRIVACY ||
-             viewMode === BrowserViewMode.SITE_SETTINGS ||
-             viewMode === BrowserViewMode.STORAGE ||
-             viewMode === BrowserViewMode.LANGUAGES ||
-             viewMode === BrowserViewMode.ABOUT ? (
-              <Settings />
-            ) : null}
+            {(viewMode === BrowserViewMode.SETTINGS ||
+              viewMode === BrowserViewMode.GENERAL ||
+              viewMode === BrowserViewMode.APPEARANCE ||
+              viewMode === BrowserViewMode.PRIVACY ||
+              viewMode === BrowserViewMode.SITE_SETTINGS ||
+              viewMode === BrowserViewMode.STORAGE ||
+              viewMode === BrowserViewMode.LANGUAGES ||
+              viewMode === BrowserViewMode.ABOUT) && <Settings />}
 
-            {viewMode === BrowserViewMode.DOWNLOADS && <Downloads />}
-            {viewMode === BrowserViewMode.HISTORY && <History />}
-            {viewMode === BrowserViewMode.BOOKMARKS && <Bookmarks />}
+            {viewMode === BrowserViewMode.DOWNLOADS && (
+              <Downloads onNavigate={handleNavigate} />
+            )}
+            {viewMode === BrowserViewMode.HISTORY && (
+              <History onNavigate={handleNavigate} />
+            )}
+            {viewMode === BrowserViewMode.BOOKMARKS && (
+              <Bookmarks onNavigate={handleNavigate} />
+            )}
             {viewMode === BrowserViewMode.LIBRARY && <Library />}
-            {viewMode === BrowserViewMode.NOTES && <NotesLibrary />}
-            {viewMode === BrowserViewMode.TAB_SWITCHER && <TabSwitcher />}
+            {viewMode === BrowserViewMode.NOTES_LIBRARY && <NotesLibrary />}
+            {viewMode === BrowserViewMode.TAB_SWITCHER && (
+              <TabSwitcher
+                tabs={tabs}
+                tabGroups={tabGroups}
+                activeTabId={activeTab.id}
+                onSelectTab={setActiveTabId}
+                onCloseTab={closeTab}
+                onCreateTab={() => createTab(false)}
+                onExit={() => setViewMode(BrowserViewMode.BROWSER)}
+              />
+            )}
           </div>
         )}
       </main>
