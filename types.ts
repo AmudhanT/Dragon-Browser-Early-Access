@@ -205,3 +205,8 @@ export interface SitePermissions {
 export interface ImageContextData {
   url: string;
 }
+
+export interface MediaInfoData {
+  url: string;
+  type: 'image' | 'video' | 'audio';
+}
