@@ -3,9 +3,8 @@ import React, {
   useContext,
   useState,
   useEffect,
-  useCallback,
-  useRef,
 } from 'react';
+
 import {
   AppSettings,
   HistoryItem,
@@ -18,11 +17,11 @@ import {
   DownloadPriority,
   ImageContextData,
   SavedPage,
-  MediaInfoData   // ✅ ADD THIS ONLY
+  MediaInfoData,
 } from './types';
-import { LocalNotifications } from '@capacitor/local-notifications';
+
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-import { translations, LANGUAGE_OPTIONS } from './utils/i18n';
+import { translations } from './utils/i18n';
 
 /* =========================
    CONTEXT TYPES
@@ -43,7 +42,6 @@ interface DragonContextType {
   addDownload: (url: string, filename: string) => void;
   removeDownload: (id: string) => void;
   removeDownloads: (ids: string[]) => void;
-
   pauseDownload: (id: string) => void;
   resumeDownload: (id: string) => void;
   cancelDownload: (id: string) => void;
@@ -59,7 +57,7 @@ interface DragonContextType {
   addNote: (content: string) => void;
   removeNote: (id: string) => void;
   notesEntrySource: 'menu' | 'pencil';
-  setNotesEntrySource: (source: 'menu' | 'pencil') => void;
+  setNotesEntrySource: (s: 'menu' | 'pencil') => void;
 
   sitePermissionRegistry: Record<string, SitePermissions>;
   getSitePermissions: (url: string) => SitePermissions;
@@ -115,22 +113,21 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('dragon_settings');
-    if (!saved) {
-      return {
-        adBlockEnabled: true,
-        javaScriptEnabled: true,
-        imagesEnabled: true,
-        autoplayEnabled: true,
-        popupsEnabled: false,
-        language: 'en',
-        preferredLanguages: ['en'],
-        dataSaved: 0,
-        notificationsEnabled: false,
-        muteDownloadNotifications: false,
-        trackersBlockedTotal: 0,
-      } as AppSettings;
-    }
-    return JSON.parse(saved);
+    return saved
+      ? JSON.parse(saved)
+      : {
+          adBlockEnabled: true,
+          javaScriptEnabled: true,
+          imagesEnabled: true,
+          autoplayEnabled: true,
+          popupsEnabled: false,
+          language: 'en',
+          preferredLanguages: ['en'],
+          dataSaved: 0,
+          notificationsEnabled: false,
+          muteDownloadNotifications: false,
+          trackersBlockedTotal: 0,
+        };
   });
 
   useEffect(() => {
@@ -142,24 +139,13 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
 
   /* ---------- HISTORY ---------- */
 
-  const [history, setHistory] = useState<HistoryItem[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem('dragon_history') || '[]');
-    } catch {
-      return [];
-    }
-  });
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  useEffect(() => {
-    localStorage.setItem('dragon_history', JSON.stringify(history));
-  }, [history]);
-
-  const addHistory = (item: Omit<HistoryItem, 'id' | 'timestamp'>) => {
+  const addHistory = (item: Omit<HistoryItem, 'id' | 'timestamp'>) =>
     setHistory(prev => [
       { ...item, id: crypto.randomUUID(), timestamp: Date.now() },
       ...prev,
     ]);
-  };
 
   const clearHistory = () => setHistory([]);
 
@@ -167,89 +153,61 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
 
-  const toggleBookmark = (url: string, title: string) => {
+  const toggleBookmark = (url: string, title: string) =>
     setBookmarks(prev =>
       prev.some(b => b.url === url)
         ? prev.filter(b => b.url !== url)
         : [...prev, { id: crypto.randomUUID(), url, title }]
     );
-  };
 
-  /* ---------- DOWNLOADS (SAFE, NO SIMULATION) ---------- */
+  /* ---------- DOWNLOADS ---------- */
 
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
 
-  const addDownload = (url: string, filename: string) => {
-    const item: DownloadItem = {
-      id: crypto.randomUUID(),
-      url,
-      filename,
-      status: 'queued',
-      progress: 0,
-      receivedBytes: 0,
-      speed: '',
-      totalBytes: 0,
-      timestamp: Date.now(),
-      resumable: false,
-      priority: 'normal' as DownloadPriority,
-      queueIndex: downloads.length,
-      type: 'other',
-    };
-    setDownloads(prev => [...prev, item]);
-  };
+  const addDownload = (url: string, filename: string) =>
+    setDownloads(prev => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        url,
+        filename,
+        status: 'queued',
+        progress: 0,
+        receivedBytes: 0,
+        speed: '',
+        totalBytes: 0,
+        timestamp: Date.now(),
+        resumable: false,
+        priority: 'normal',
+        queueIndex: prev.length,
+        type: 'other',
+      },
+    ]);
 
   const removeDownload = (id: string) =>
     setDownloads(prev => prev.filter(d => d.id !== id));
 
-  /* ---------- SITE PERMISSIONS ---------- */
+  const removeDownloads = (ids: string[]) =>
+    setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
 
-  const [sitePermissionRegistry, setSitePermissionRegistry] = useState<
-    Record<string, SitePermissions>
-  >({});
+  const pauseDownload = () => {};
+  const resumeDownload = () => {};
+  const cancelDownload = () => {};
+  const updateDownloadPriority = () => {};
+  const moveDownloadOrder = () => {};
 
-  const getSitePermissions = (url: string): SitePermissions => {
-    try {
-      const domain = new URL(url).hostname;
-      return sitePermissionRegistry[domain] || {
-        javascript: true,
-        cookies: true,
-        images: true,
-        autoplay: true,
-        forceDarkMode: false,
-        location: 'ask',
-        camera: 'ask',
-        microphone: 'ask',
-        notifications: 'ask',
-        media: 'ask',
-        sound: 'allow',
-        clipboard: 'ask',
-        popups: 'block',
-        lastModified: 0,
-      };
-    } catch {
-      return {} as SitePermissions;
-    }
-  };
+  /* ---------- VIEW / NAV ---------- */
 
-  const updateSitePermissions = (url: string, updates: Partial<SitePermissions>) => {
-    const domain = new URL(url).hostname;
-    setSitePermissionRegistry(prev => ({
-      ...prev,
-      [domain]: { ...prev[domain], ...updates, lastModified: Date.now() },
-    }));
-  };
+  const [viewMode, setViewMode] = useState(BrowserViewMode.BROWSER);
 
-  const resetSitePermissions = (url: string) => {
-    const domain = new URL(url).hostname;
-    setSitePermissionRegistry(prev => {
-      const { [domain]: _, ...rest } = prev;
-      return rest;
-    });
-  };
+  const navigateTo = (mode: BrowserViewMode) => setViewMode(mode);
+  const navigateBack = () => setViewMode(BrowserViewMode.BROWSER);
 
   /* ---------- NOTES ---------- */
 
   const [notes, setNotes] = useState<NoteItem[]>([]);
+  const [notesEntrySource, setNotesEntrySource] =
+    useState<'menu' | 'pencil'>('menu');
 
   const addNote = (content: string) =>
     setNotes(prev => [
@@ -260,29 +218,80 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   const removeNote = (id: string) =>
     setNotes(prev => prev.filter(n => n.id !== id));
 
-  /* ---------- OFFLINE PAGES ---------- */
+  /* ---------- IMAGE CONTEXT ---------- */
+
+  const [imageContextMenuData, setImageContextMenuData] =
+    useState<ImageContextData | null>(null);
+
+  const openImageContextMenu = (url: string) =>
+    setImageContextMenuData({ url });
+
+  const closeImageContextMenu = () =>
+    setImageContextMenuData(null);
+
+  /* ---------- MEDIA ---------- */
+
+  const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
+
+  const playMedia = (
+    url: string,
+    filename: string,
+    type: 'video' | 'audio' | 'image'
+  ) => setActiveMedia({ url, filename, type });
+
+  const closeMedia = () => setActiveMedia(null);
+
+  const [mediaInfoData, setMediaInfoData] =
+    useState<MediaInfoData | null>(null);
+
+  const openMediaInfo = (url: string, type: 'image' | 'video' | 'audio') =>
+    setMediaInfoData({ url, type });
+
+  const closeMediaInfo = () => setMediaInfoData(null);
+
+  /* ---------- SITE PERMS ---------- */
+
+  const [sitePermissionRegistry, setSitePermissionRegistry] =
+    useState<Record<string, SitePermissions>>({});
+
+  const getSitePermissions = (url: string) =>
+    sitePermissionRegistry[new URL(url).hostname];
+
+  const updateSitePermissions = (url: string, updates: Partial<SitePermissions>) =>
+    setSitePermissionRegistry(prev => ({
+      ...prev,
+      [new URL(url).hostname]: {
+        ...prev[new URL(url).hostname],
+        ...updates,
+        lastModified: Date.now(),
+      },
+    }));
+
+  const resetSitePermissions = (url: string) =>
+    setSitePermissionRegistry(prev => {
+      const copy = { ...prev };
+      delete copy[new URL(url).hostname];
+      return copy;
+    });
+
+  /* ---------- OFFLINE ---------- */
 
   const [savedPages, setSavedPages] = useState<SavedPage[]>([]);
 
   const savePageOffline = async (url: string, title: string) => {
-    try {
-      const res = await fetch(url);
-      const html = await res.text();
-      const filename = `page_${Date.now()}.html`;
-      await Filesystem.writeFile({
-        path: filename,
-        data: html,
-        directory: Directory.Data,
-        encoding: Encoding.UTF8,
-      });
-      setSavedPages(p => [
-        { id: crypto.randomUUID(), url, title, filename, timestamp: Date.now(), size: html.length },
-        ...p,
-      ]);
-      return true;
-    } catch {
-      return false;
-    }
+    const html = await (await fetch(url)).text();
+    const filename = `page_${Date.now()}.html`;
+    await Filesystem.writeFile({
+      path: filename,
+      data: html,
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+    });
+    setSavedPages(p => [
+      { id: crypto.randomUUID(), url, title, filename, timestamp: Date.now(), size: html.length },
+      ...p,
+    ]);
+    return true;
   };
 
   const deleteSavedPage = async (id: string) =>
@@ -291,185 +300,89 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   const getOfflineContent = async (url: string) => {
     const page = savedPages.find(p => p.url === url);
     if (!page) return null;
-    const res = await Filesystem.readFile({
+    return (await Filesystem.readFile({
       path: page.filename,
       directory: Directory.Data,
       encoding: Encoding.UTF8,
-    });
-    return res.data as string;
+    })).data as string;
   };
 
-  /* ---------- TRANSLATION ---------- */
+  /* ---------- ANALYTICS ---------- */
+
+  const incrementTrackers = (count: number) =>
+    setSettings(p => ({ ...p, trackersBlockedTotal: p.trackersBlockedTotal + count }));
+
+  const incrementDataSaved = (bytes: number) =>
+    setSettings(p => ({ ...p, dataSaved: p.dataSaved + bytes }));
+
+  /* ---------- APP ---------- */
+
+  const purgeAllData = () => {
+    setHistory([]);
+    setBookmarks([]);
+    setDownloads([]);
+    setNotes([]);
+    setSavedPages([]);
+  };
+
+  const architect = 'Amudhan T';
 
   const t = (key: string) =>
     translations[settings.language]?.[key] || key;
 
-  /* ---------- VIEW / NAVIGATION ---------- */
-
-const [viewMode, setViewMode] = useState<BrowserViewMode>(
-  BrowserViewMode.BROWSER
-);
-
-const navigateBack = () => {
-  setViewMode(BrowserViewMode.BROWSER);
-};
-
-const navigateTo = (mode: BrowserViewMode) => {
-  setViewMode(mode);
-};
-
-/* ---------- IMAGE CONTEXT MENU ---------- */
-
-const [imageContextMenuData, setImageContextMenuData] =
-  useState<ImageContextData | null>(null);
-
-const openImageContextMenu = (url: string) => {
-  setImageContextMenuData({ url });
-};
-
-const closeImageContextMenu = () => {
-  setImageContextMenuData(null);
-};
-
-/* ---------- MEDIA ---------- */
-
-const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
-
-const playMedia = (
-  url: string,
-  filename: string,
-  type: 'video' | 'audio' | 'image'
-) => {
-  setActiveMedia({ url, filename, type });
-};
-
-const closeMedia = () => {
-  setActiveMedia(null);
-};
-
-const [mediaInfoData, setMediaInfoData] =
-  useState<MediaInfoData | null>(null);
-
-const openMediaInfo = (
-  url: string,
-  type: 'image' | 'video' | 'audio'
-) => {
-  setMediaInfoData({ url, type });
-};
-
-const closeMediaInfo = () => {
-  setMediaInfoData(null);
-};
-
-/* ---------- DOWNLOAD HELPERS ---------- */
-
-const pauseDownload = (id: string) => {};
-const resumeDownload = (id: string) => {};
-const cancelDownload = (id: string) => {};
-const updateDownloadPriority = (
-  id: string,
-  priority: DownloadPriority
-) => {};
-const moveDownloadOrder = (
-  id: string,
-  direction: 'up' | 'down'
-) => {};
-const removeDownloads = (ids: string[]) => {
-  setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
-};
-
-/* ---------- ANALYTICS ---------- */
-
-const incrementTrackers = (count: number) => {
-  setSettings(prev => ({
-    ...prev,
-    trackersBlockedTotal: prev.trackersBlockedTotal + count,
-  }));
-};
-
-const incrementDataSaved = (bytes: number) => {
-  setSettings(prev => ({
-    ...prev,
-    dataSaved: prev.dataSaved + bytes,
-  }));
-};
-
-/* ---------- APP ---------- */
-
-const purgeAllData = () => {
-  setHistory([]);
-  setBookmarks([]);
-  setDownloads([]);
-  setNotes([]);
-  setSavedPages([]);
-};
-
-const architect = 'Amudhan T';
-
   return (
-  <DragonContext.Provider
-    value={{
-      settings,
-      updateSettings,
-
-      history,
-      addHistory,
-      clearHistory,
-
-      bookmarks,
-      toggleBookmark,
-
-      downloads,
-      addDownload,
-      removeDownload,
-      removeDownloads,
-      pauseDownload,
-      resumeDownload,
-      cancelDownload,
-      updateDownloadPriority,
-      moveDownloadOrder,
-
-      viewMode,
-      setViewMode,
-      navigateTo,
-      navigateBack,
-
-      notes,
-      addNote,
-      removeNote,
-      notesEntrySource,
-      setNotesEntrySource,
-
-      sitePermissionRegistry,
-      getSitePermissions,
-      updateSitePermissions,
-      resetSitePermissions,
-
-      savedPages,
-      savePageOffline,
-      deleteSavedPage,
-      getOfflineContent,
-
-      imageContextMenuData,
-      openImageContextMenu,
-      closeImageContextMenu,
-
-      activeMedia,
-      playMedia,
-      closeMedia,
-
-      mediaInfoData,
-      openMediaInfo,
-      closeMediaInfo,
-
-      incrementTrackers,
-      incrementDataSaved,
-
-      purgeAllData,
-      architect,
-      t,
-    }}
-  >
-    {children}
-  </DragonContext.Provider>
-);
+    <DragonContext.Provider
+      value={{
+        settings,
+        updateSettings,
+        history,
+        addHistory,
+        clearHistory,
+        bookmarks,
+        toggleBookmark,
+        downloads,
+        addDownload,
+        removeDownload,
+        removeDownloads,
+        pauseDownload,
+        resumeDownload,
+        cancelDownload,
+        updateDownloadPriority,
+        moveDownloadOrder,
+        viewMode,
+        setViewMode,
+        navigateTo,
+        navigateBack,
+        notes,
+        addNote,
+        removeNote,
+        notesEntrySource,
+        setNotesEntrySource,
+        sitePermissionRegistry,
+        getSitePermissions,
+        updateSitePermissions,
+        resetSitePermissions,
+        savedPages,
+        savePageOffline,
+        deleteSavedPage,
+        getOfflineContent,
+        imageContextMenuData,
+        openImageContextMenu,
+        closeImageContextMenu,
+        activeMedia,
+        playMedia,
+        closeMedia,
+        mediaInfoData,
+        openMediaInfo,
+        closeMediaInfo,
+        incrementTrackers,
+        incrementDataSaved,
+        purgeAllData,
+        architect,
+        t,
+      }}
+    >
+      {children}
+    </DragonContext.Provider>
+  );
+};
