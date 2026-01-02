@@ -41,6 +41,9 @@ interface DragonContextType {
   settings: AppSettings;
   updateSettings: (updates: Partial<AppSettings>) => void;
 
+  clearGlobalData: () => void;
+  checkAndRequestNotificationPermission: () => Promise<boolean>;
+
   history: HistoryItem[];
   addHistory: (item: Omit<HistoryItem, 'id' | 'timestamp'>) => void;
   clearHistory: () => void;
@@ -66,8 +69,11 @@ interface DragonContextType {
   navigateBack: () => void;
 
   notes: NoteItem[];
+  deletedNotes: NoteItem[];
   addNote: (content: string) => void;
   removeNote: (id: string) => void;
+  recoverNote: (id: string) => void;
+  permanentlyDeleteNote: (id: string) => void;
   notesEntrySource: 'menu' | 'pencil';
   setNotesEntrySource: (s: 'menu' | 'pencil') => void;
 
@@ -159,6 +165,17 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateSettings = (updates: Partial<AppSettings>) =>
     setSettings(prev => ({ ...prev, ...updates }));
 
+  const clearGlobalData = () => {
+    localStorage.clear();
+    purgeAllData();
+  };
+
+  const checkAndRequestNotificationPermission = async () => {
+    if (!('Notification' in window)) return false;
+    if (Notification.permission === 'granted') return true;
+    return (await Notification.requestPermission()) === 'granted';
+  };
+
   /* ---------- HISTORY ---------- */
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -183,7 +200,10 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
     setBookmarks(prev =>
       prev.some(b => b.url === url)
         ? prev.filter(b => b.url !== url)
-        : [...prev, { id: crypto.randomUUID(), url, title }]
+        : [
+            ...prev,
+            { id: crypto.randomUUID(), url, title, timestamp: Date.now() },
+          ]
     );
 
   /* ---------- DOWNLOADS ---------- */
@@ -202,6 +222,7 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
         receivedBytes: 0,
         speed: '',
         totalBytes: 0,
+        size: 0,
         timestamp: Date.now(),
         resumable: false,
         priority: 'normal',
@@ -216,14 +237,11 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   const removeDownloads = (ids: string[]) =>
     setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
 
-  const pauseDownload = (_id: string) => {};
-  const resumeDownload = (_id: string) => {};
-  const cancelDownload = (_id: string) => {};
-  const updateDownloadPriority = (
-    _id: string,
-    _priority: DownloadPriority
-  ) => {};
-  const moveDownloadOrder = (_id: string, _dir: 'up' | 'down') => {};
+  const pauseDownload = () => {};
+  const resumeDownload = () => {};
+  const cancelDownload = () => {};
+  const updateDownloadPriority = () => {};
+  const moveDownloadOrder = () => {};
 
   /* ---------- VIEW ---------- */
 
@@ -234,6 +252,7 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   /* ---------- NOTES ---------- */
 
   const [notes, setNotes] = useState<NoteItem[]>([]);
+  const [deletedNotes, setDeletedNotes] = useState<NoteItem[]>([]);
   const [notesEntrySource, setNotesEntrySource] =
     useState<'menu' | 'pencil'>('menu');
 
@@ -244,21 +263,35 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
     ]);
 
   const removeNote = (id: string) =>
-    setNotes(prev => prev.filter(n => n.id !== id));
+    setNotes(prev => {
+      const note = prev.find(n => n.id === id);
+      if (note) setDeletedNotes(d => [note, ...d]);
+      return prev.filter(n => n.id !== id);
+    });
+
+  const recoverNote = (id: string) => {
+    const note = deletedNotes.find(n => n.id === id);
+    if (!note) return;
+    setDeletedNotes(d => d.filter(n => n.id !== id));
+    setNotes(n => [note, ...n]);
+  };
+
+  const permanentlyDeleteNote = (id: string) =>
+    setDeletedNotes(d => d.filter(n => n.id !== id));
 
   /* ---------- SPEED DIAL ---------- */
 
   const [speedDial, setSpeedDial] = useState<Shortcut[]>([]);
 
   const addShortcut = (name: string, url: string) =>
-    setSpeedDial(prev => [...prev, { id: crypto.randomUUID(), name, url }]);
+    setSpeedDial(p => [...p, { id: crypto.randomUUID(), name, url }]);
 
   const removeShortcut = (id: string) =>
-    setSpeedDial(prev => prev.filter(s => s.id !== id));
+    setSpeedDial(p => p.filter(s => s.id !== id));
 
   const updateSpeedDial = (items: Shortcut[]) => setSpeedDial(items);
 
-  /* ---------- IMAGE CONTEXT ---------- */
+  /* ---------- IMAGE / MEDIA ---------- */
 
   const [imageContextMenuData, setImageContextMenuData] =
     useState<ImageContextData | null>(null);
@@ -268,27 +301,19 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const closeImageContextMenu = () => setImageContextMenuData(null);
 
-  /* ---------- MEDIA ---------- */
-
   const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
-
-  const playMedia = (
-    url: string,
-    filename: string,
-    type: 'video' | 'audio' | 'image'
-  ) => setActiveMedia({ url, filename, type });
-
+  const playMedia = (url: string, filename: string, type: any) =>
+    setActiveMedia({ url, filename, type });
   const closeMedia = () => setActiveMedia(null);
 
   const [mediaInfoData, setMediaInfoData] =
     useState<MediaInfoData | null>(null);
 
-  const openMediaInfo = (url: string, type: 'image' | 'video' | 'audio') =>
+  const openMediaInfo = (url: string, type: any) =>
     setMediaInfoData({ url, type });
-
   const closeMediaInfo = () => setMediaInfoData(null);
 
-  /* ---------- SITE PERMS ---------- */
+  /* ---------- SITE / OFFLINE ---------- */
 
   const [sitePermissionRegistry, setSitePermissionRegistry] =
     useState<Record<string, SitePermissions>>({});
@@ -308,14 +333,12 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const resetSitePermissions = (url: string) =>
     setSitePermissionRegistry(prev => {
-      const copy = { ...prev };
-      delete copy[new URL(url).hostname];
-      return copy;
+      const c = { ...prev };
+      delete c[new URL(url).hostname];
+      return c;
     });
 
   const clearSiteData = async () => {};
-
-  /* ---------- OFFLINE ---------- */
 
   const [savedPages, setSavedPages] = useState<SavedPage[]>([]);
 
@@ -360,10 +383,7 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   /* ---------- ANALYTICS ---------- */
 
   const incrementTrackers = (count: number) =>
-    setSettings(p => ({
-      ...p,
-      trackersBlockedTotal: p.trackersBlockedTotal + count,
-    }));
+    setSettings(p => ({ ...p, trackersBlockedTotal: p.trackersBlockedTotal + count }));
 
   const incrementDataSaved = (bytes: number) =>
     setSettings(p => ({ ...p, dataSaved: p.dataSaved + bytes }));
@@ -375,20 +395,21 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
     setBookmarks([]);
     setDownloads([]);
     setNotes([]);
+    setDeletedNotes([]);
     setSavedPages([]);
     setSpeedDial([]);
   };
 
   const architect = 'Amudhan T';
-
-  const t = (key: string) =>
-    translations[settings.language]?.[key] || key;
+  const t = (key: string) => translations[settings.language]?.[key] || key;
 
   return (
     <DragonContext.Provider
       value={{
         settings,
         updateSettings,
+        clearGlobalData,
+        checkAndRequestNotificationPermission,
         history,
         addHistory,
         clearHistory,
@@ -410,8 +431,11 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
         navigateTo,
         navigateBack,
         notes,
+        deletedNotes,
         addNote,
         removeNote,
+        recoverNote,
+        permanentlyDeleteNote,
         notesEntrySource,
         setNotesEntrySource,
         sitePermissionRegistry,
