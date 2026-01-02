@@ -1,38 +1,24 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { useDragon } from '../DragonContext';
 import DragonHeader from '../components/DragonHeader';
 import {
   Palette,
   ChevronRight,
   ShieldCheck,
-  Clock,
   Trash2,
-  LayoutGrid,
-  Sun,
-  Moon,
   Info,
-  Globe,
   Database,
   Ghost,
   Settings as SettingsIcon,
   Languages,
-  Volume2,
-  Clipboard,
-  ChevronDown,
-  CheckCircle,
   Shield,
   Radar,
 } from 'lucide-react';
 
 import {
   AppSettings,
-  ThemeMode,
-  ToolbarConfig,
-  PermissionState,
   BrowserViewMode,
 } from '../types';
-
-import { LANGUAGE_OPTIONS } from '../utils/i18n';
 
 /* =========================
    SETTINGS PAGE
@@ -48,8 +34,6 @@ const Settings: React.FC = () => {
     t,
     purgeAllData,
   } = useDragon();
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!settings) {
     return (
@@ -68,7 +52,7 @@ const Settings: React.FC = () => {
   };
 
   /* =========================
-     UI
+     UI HELPERS
   ========================= */
 
   const renderToggle = (
@@ -148,9 +132,10 @@ const Settings: React.FC = () => {
         onClick={() => {
           if (confirm('Delete all data?')) purgeAllData();
         }}
-        className="w-full p-4 bg-red-500/10 text-red-500 rounded-xl font-bold"
+        className="w-full p-4 bg-red-500/10 text-red-500 rounded-xl font-bold flex items-center justify-center gap-2"
       >
-        <Trash2 size={16} /> Clear All Data
+        <Trash2 size={16} />
+        Clear All Data
       </button>
     </div>
   );
