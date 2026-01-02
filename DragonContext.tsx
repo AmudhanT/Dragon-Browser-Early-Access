@@ -406,7 +406,7 @@ const purgeAllData = () => {
 
 const architect = 'Amudhan T';
 
-  /* ---------- CONTEXT VALUE ---------- */return (
+  return (
   <DragonContext.Provider
     value={{
       settings,
