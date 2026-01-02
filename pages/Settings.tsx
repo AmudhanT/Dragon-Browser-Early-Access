@@ -202,4 +202,8 @@ const Settings: React.FC = () => {
   );
 };
 
+export const Settings: React.FC<{ mode: BrowserViewMode }> = ({ mode }) => {
+  ...
+};
+
 export default Settings;
