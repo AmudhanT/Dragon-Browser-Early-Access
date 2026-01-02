@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DragonProvider, useDragon } from './DragonContext';
 
@@ -12,7 +13,6 @@ import { Bookmarks } from './pages/Bookmarks';
 import { Library } from './pages/Library';
 import { NotesLibrary } from './pages/NotesLibrary';
 
-import { TabSwitcher } from './components/TabSwitcher';
 import AddressBar from './components/AddressBar';
 
 import { BrowserViewMode } from './types';
@@ -22,6 +22,10 @@ import { useTabs } from './hooks/useTabs';
 import { normalizeUrl, getDisplayTitle, cleanUrlForDisplay } from './utils/urlUtils';
 
 import { App as CapacitorApp } from '@capacitor/app';
+
+/* =========================
+   APP CONTENT
+========================= */
 
 const AppContent: React.FC = () => {
   const {
@@ -36,22 +40,24 @@ const AppContent: React.FC = () => {
 
   const {
     tabs,
-    tabGroups,
     activeTab,
     goBack,
     navigateTab,
     setTabLoading,
     createTab,
     reloadTab,
-    setActiveTabId,
-    closeTab,
   } = useTabs(settings.stealthFlight, settings.searchEngine);
 
-  const viewportRefs = useRef<Map<string, BrowserViewportHandle>>(new Map());
+  // ✅ SINGLE, VALID REF
+  const viewportRef = useRef<BrowserViewportHandle | null>(null);
   const lastBackPress = useRef(0);
 
   const [urlInputValue, setUrlInputValue] = useState('');
   const [showExitToast, setShowExitToast] = useState(false);
+
+  /* =========================
+     THEME
+  ========================= */
 
   useEffect(() => {
     const root = document.documentElement;
@@ -63,6 +69,10 @@ const AppContent: React.FC = () => {
     root.classList.toggle('dark', dark);
     root.style.colorScheme = dark ? 'dark' : 'light';
   }, [settings.themeMode]);
+
+  /* =========================
+     BACK BUTTON
+  ========================= */
 
   const handleSmartBack = useCallback(() => {
     if (viewMode !== BrowserViewMode.BROWSER) {
@@ -92,6 +102,10 @@ const AppContent: React.FC = () => {
     };
   }, [handleSmartBack]);
 
+  /* =========================
+     NAVIGATION
+  ========================= */
+
   const handleNavigate = useCallback(
     (input: string) => {
       const normalized = normalizeUrl(
@@ -111,9 +125,14 @@ const AppContent: React.FC = () => {
   const isBookmarked = bookmarks.some(b => b.url === activeTab.url);
   const isHomePage = activeTab.url === 'dragon://home';
 
-  return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black">
+  /* =========================
+     RENDER
+  ========================= */
 
+  return (
+    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black text-slate-900 dark:text-white">
+
+      {/* HEADER */}
       {viewMode === BrowserViewMode.BROWSER && !isHomePage && (
         <header className="h-[60px] border-b flex items-center px-3 gap-2">
           <AddressBar
@@ -122,22 +141,32 @@ const AppContent: React.FC = () => {
             onUrlChange={setUrlInputValue}
             onUrlSubmit={() => handleNavigate(urlInputValue)}
           />
-          <button onClick={() => createTab(false)}><Plus size={18} /></button>
+
+          <button onClick={() => createTab(false)}>
+            <Plus size={18} />
+          </button>
+
           <button onClick={() => toggleBookmark(activeTab.url, activeTab.title)}>
             <Star size={18} fill={isBookmarked ? 'currentColor' : 'none'} />
           </button>
         </header>
       )}
 
+      {/* MAIN */}
       <main className="flex-1 relative overflow-hidden">
+
         {showExitToast && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-xs bg-black text-white px-4 py-2 rounded">
             Press back again to exit
           </div>
         )}
 
+        {/* BROWSER */}
         {viewMode === BrowserViewMode.BROWSER && tabs.map(tab => (
-          <div key={tab.id} className={`absolute inset-0 ${tab.id === activeTab.id ? 'block' : 'hidden'}`}>
+          <div
+            key={tab.id}
+            className={`absolute inset-0 ${tab.id === activeTab.id ? 'block' : 'hidden'}`}
+          >
             {tab.url === 'dragon://home' ? (
               <NewTabPage
                 onNavigate={handleNavigate}
@@ -148,7 +177,7 @@ const AppContent: React.FC = () => {
               <>
                 <FireProgressBar isLoading={tab.isLoading} themeColor="#f97316" />
                 <BrowserViewport
-                  ref={(el) => el && viewportRefs.current.set(tab.id, el)}
+                  ref={viewportRef}
                   activeTab={tab}
                   onLoadStart={() => setTabLoading(true)}
                   onLoadEnd={() => setTabLoading(false)}
@@ -163,19 +192,47 @@ const AppContent: React.FC = () => {
           </div>
         ))}
 
-        {viewMode === BrowserViewMode.TAB_SWITCHER && (
-          <TabSwitcher
-            tabs={tabs}
-            tabGroups={tabGroups}
-            activeTabId={activeTab.id}
-            onSelectTab={setActiveTabId}
-            onCloseTab={closeTab}
-          />
+        {/* OTHER SCREENS */}
+        {viewMode !== BrowserViewMode.BROWSER && (
+          <div className="absolute inset-0 bg-slate-50 dark:bg-black">
+            {[
+              BrowserViewMode.SETTINGS,
+              BrowserViewMode.GENERAL,
+              BrowserViewMode.APPEARANCE,
+              BrowserViewMode.PRIVACY,
+              BrowserViewMode.SITE_SETTINGS,
+              BrowserViewMode.STORAGE,
+              BrowserViewMode.LANGUAGES,
+              BrowserViewMode.ABOUT,
+            ].includes(viewMode) && <Settings />}
+
+            {viewMode === BrowserViewMode.DOWNLOADS && (
+              <Downloads onNavigate={handleNavigate} />
+            )}
+
+            {viewMode === BrowserViewMode.HISTORY && (
+              <History
+                onNavigate={handleNavigate}
+                onOpenInNewTab={(url) => createTab(false, url)}
+              />
+            )}
+
+            {viewMode === BrowserViewMode.BOOKMARKS && (
+              <Bookmarks onNavigate={handleNavigate} />
+            )}
+
+            {viewMode === BrowserViewMode.LIBRARY && <Library />}
+            {viewMode === BrowserViewMode.NOTES_LIBRARY && <NotesLibrary />}
+          </div>
         )}
       </main>
     </div>
   );
 };
+
+/* =========================
+   ROOT
+========================= */
 
 const App: React.FC = () => (
   <DragonProvider>
