@@ -1,18 +1,14 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDragon } from '../DragonContext';
-import { BrowserViewMode } from '../types';
 
 /**
- * DEPRECATED: This component is legacy.
- * Settings logic is now handled in pages/Settings.tsx with flattened routing.
- * This file is kept as a placeholder to prevent import errors during migration.
+ * DEPRECATED: Legacy redirect component
  */
-const Settings: React.FC = () => {
+const Settings = () => {
   const { navigateTo } = useDragon();
 
-  // Auto-redirect if somehow mounted
   useEffect(() => {
-    navigateTo(BrowserViewMode.SETTINGS);
+    navigateTo(); // ✅ NO ARGUMENT
   }, [navigateTo]);
 
   return null;
