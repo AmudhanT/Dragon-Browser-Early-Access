@@ -42,13 +42,24 @@ interface DragonContextType {
   downloads: DownloadItem[];
   addDownload: (url: string, filename: string) => void;
   removeDownload: (id: string) => void;
+  removeDownloads: (ids: string[]) => void;
+
+  pauseDownload: (id: string) => void;
+  resumeDownload: (id: string) => void;
+  cancelDownload: (id: string) => void;
+  updateDownloadPriority: (id: string, priority: DownloadPriority) => void;
+  moveDownloadOrder: (id: string, direction: 'up' | 'down') => void;
 
   viewMode: BrowserViewMode;
   setViewMode: (mode: BrowserViewMode) => void;
+  navigateTo: (mode: BrowserViewMode) => void;
+  navigateBack: () => void;
 
   notes: NoteItem[];
   addNote: (content: string) => void;
   removeNote: (id: string) => void;
+  notesEntrySource: 'menu' | 'pencil';
+  setNotesEntrySource: (source: 'menu' | 'pencil') => void;
 
   sitePermissionRegistry: Record<string, SitePermissions>;
   getSitePermissions: (url: string) => SitePermissions;
@@ -64,34 +75,20 @@ interface DragonContextType {
   openImageContextMenu: (url: string) => void;
   closeImageContextMenu: () => void;
 
-  // Downloads (advanced)
-pauseDownload: (id: string) => void;
-resumeDownload: (id: string) => void;
-updateDownloadPriority: (id: string, priority: DownloadPriority) => void;
-moveDownloadOrder: (id: string, direction: 'up' | 'down') => void;
+  activeMedia: ActiveMedia | null;
+  playMedia: (url: string, filename: string, type: 'video' | 'audio' | 'image') => void;
+  closeMedia: () => void;
 
-// Media
-playMedia: (url: string, filename: string, type: 'video' | 'audio' | 'image') => void;
+  mediaInfoData: MediaInfoData | null;
+  openMediaInfo: (url: string, type: 'image' | 'video' | 'audio') => void;
+  closeMediaInfo: () => void;
 
-// App info
-architect: string;
-
-  // Navigation
-  navigateBack: () => void;
-
-  // Downloads
-  removeDownloads: (ids: string[]) => void;
-
-  // Analytics
   incrementTrackers: (count: number) => void;
   incrementDataSaved: (bytes: number) => void;
 
-  // Media
-  activeMedia: ActiveMedia | null;
-  closeMedia: () => void;
-  mediaInfoData: MediaInfoData | null;
-  closeMediaInfo: () => void;
+  purgeAllData: () => void;
 
+  architect: string;
   t: (key: string) => string;
 }
 
@@ -310,38 +307,48 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
   /* ---------- CONTEXT VALUE ---------- */
 
   return (
-    <DragonContext.Provider
-      value={{
-        settings,
-        updateSettings,
-        history,
-        addHistory,
-        clearHistory,
-        bookmarks,
-        toggleBookmark,
-        downloads,
-        addDownload,
-        removeDownload,
-        viewMode: BrowserViewMode.BROWSER,
-        setViewMode: () => {},
-        notes,
-        addNote,
-        removeNote,
-        sitePermissionRegistry,
-        getSitePermissions,
-        updateSitePermissions,
-        resetSitePermissions,
-        savedPages,
-        savePageOffline,
-        deleteSavedPage,
-        getOfflineContent,
-        imageContextMenuData: null,
-        openImageContextMenu: () => {},
-        closeImageContextMenu: () => {},
-        t,
-      }}
-    >
-      {children}
-    </DragonContext.Provider>
-  );
-};
+  <DragonContext.Provider
+    value={{
+      settings,
+      updateSettings,
+      history,
+      addHistory,
+      clearHistory,
+      bookmarks,
+      toggleBookmark,
+      downloads,
+      addDownload,
+      removeDownload,
+
+      viewMode: BrowserViewMode.BROWSER,
+      setViewMode: () => {},
+
+      notes,
+      addNote,
+      removeNote,
+
+      sitePermissionRegistry,
+      getSitePermissions,
+      updateSitePermissions,
+      resetSitePermissions,
+
+      savedPages,
+      savePageOffline,
+      deleteSavedPage,
+      getOfflineContent,
+
+      imageContextMenuData: null,
+      openImageContextMenu: () => {},
+      closeImageContextMenu: () => {},
+
+      cancelDownload,
+      purgeAllData,
+      openMediaInfo,
+      navigateTo,
+
+      t,
+    }}
+  >
+    {children}
+  </DragonContext.Provider>
+);
