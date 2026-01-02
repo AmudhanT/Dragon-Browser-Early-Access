@@ -332,14 +332,13 @@ const AppContent = () => {
       {viewMode === BrowserViewMode.BROWSER && !isHomePage && (
         <header className="h-[60px] bg-white dark:bg-black border-b border-slate-200 dark:border-white/5 flex items-center px-3 z-50 shrink-0 transition-colors duration-300 gap-2">
           <div className="flex-1 min-w-0">
-            <AddressBar 
-              activeTab={activeTab} urlInputValue={urlInputValue}
-              onUrlChange={setUrlInputValue} onUrlSubmit={() => handleNavigate(urlInputValue)}
-              onReload={() => { reloadTab(); setRefreshTrigger(t => t + 1); }}
-              accentColor="#f97316" 
-              onSiteSettingsClick={() => setIsSiteSettingsOpen(true)}
-              onFocus={() => setIsSearchOverlayOpen(true)}
-            />
+            <AddressBar
+  activeTab={activeTab}
+  urlInputValue={urlInputValue}
+  onUrlChange={setUrlInputValue}
+  onUrlSubmit={() => handleNavigate(urlInputValue)}
+  onFocus={() => setIsSearchOverlayOpen(true)}
+/>
           </div>
           <div className="flex items-center shrink-0 gap-0.5">
             {settings.toolbarConfig.showLens && (
