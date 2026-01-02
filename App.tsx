@@ -12,6 +12,7 @@ import { Bookmarks } from './pages/Bookmarks';
 import { Library } from './pages/Library';
 import { NotesLibrary } from './pages/NotesLibrary';
 
+import { TabSwitcher } from './components/TabSwitcher';
 import AddressBar from './components/AddressBar';
 
 import { BrowserViewMode } from './types';
@@ -39,12 +40,15 @@ const AppContent: React.FC = () => {
 
   const {
     tabs,
+    tabGroups,
     activeTab,
     goBack,
     navigateTab,
     setTabLoading,
     createTab,
     reloadTab,
+    setActiveTabId,
+    closeTab,
   } = useTabs(settings.stealthFlight, settings.searchEngine);
 
   const viewportRefs = useRef<Map<string, BrowserViewportHandle>>(new Map());
@@ -65,6 +69,7 @@ const AppContent: React.FC = () => {
         window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     root.classList.toggle('dark', dark);
+    root.style.colorScheme = dark ? 'dark' : 'light';
   }, [settings.themeMode]);
 
   /* =========================
@@ -93,9 +98,9 @@ const AppContent: React.FC = () => {
   }, [viewMode, navigateBack, goBack, activeTab.currentIndex]);
 
   useEffect(() => {
-    const listener = CapacitorApp.addListener('backButton', handleSmartBack);
+    const sub = CapacitorApp.addListener('backButton', handleSmartBack);
     return () => {
-      listener.then(l => l.remove());
+      sub.then(l => l.remove());
     };
   }, [handleSmartBack]);
 
@@ -116,13 +121,8 @@ const AppContent: React.FC = () => {
       navigateTab(normalized);
       setViewMode(BrowserViewMode.BROWSER);
     },
-    [settings.searchEngine, settings.httpsOnlyMode, navigateTab, addHistory, setViewMode]
+    [settings, navigateTab, addHistory, setViewMode]
   );
-
-  const handleOpenInNewTab = (url: string) => {
-    createTab(false);
-    navigateTab(url);
-  };
 
   const isBookmarked = bookmarks.some(b => b.url === activeTab.url);
   const isHomePage = activeTab.url === 'dragon://home';
@@ -132,7 +132,7 @@ const AppContent: React.FC = () => {
   ========================= */
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black">
+    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black text-slate-900 dark:text-white overflow-hidden">
 
       {/* HEADER */}
       {viewMode === BrowserViewMode.BROWSER && !isHomePage && (
@@ -169,19 +169,29 @@ const AppContent: React.FC = () => {
             {tabs.map(tab => (
               <div
                 key={tab.id}
-                className={`absolute inset-0 ${tab.id === activeTab.id ? 'block' : 'hidden'}`}
+                className={`absolute inset-0 ${
+                  tab.id === activeTab.id ? 'block' : 'hidden'
+                }`}
               >
                 {tab.url === 'dragon://home' ? (
                   <NewTabPage
                     onNavigate={handleNavigate}
-                    onOpenInNewTab={handleOpenInNewTab}
+                    onOpenInNewTab={(url) => createTab(false, url)}
                     onTriggerSearch={() => {}}
                   />
                 ) : (
                   <>
-                    <FireProgressBar isLoading={tab.isLoading} themeColor="#f97316" />
+                    <FireProgressBar
+                      isLoading={tab.isLoading}
+                      themeColor="#f97316"
+                    />
+
                     <BrowserViewport
-                      ref={el => el && viewportRefs.current.set(tab.id, el)}
+                      ref={(el) => {
+                        if (el) {
+                          viewportRefs.current.set(tab.id, el);
+                        }
+                      }}
                       activeTab={tab}
                       onLoadStart={() => setTabLoading(true)}
                       onLoadEnd={() => setTabLoading(false)}
@@ -201,15 +211,16 @@ const AppContent: React.FC = () => {
         {/* OTHER SCREENS */}
         {viewMode !== BrowserViewMode.BROWSER && (
           <div className="absolute inset-0 bg-slate-50 dark:bg-black">
-
-            {(viewMode === BrowserViewMode.SETTINGS ||
-              viewMode === BrowserViewMode.GENERAL ||
-              viewMode === BrowserViewMode.APPEARANCE ||
-              viewMode === BrowserViewMode.PRIVACY ||
-              viewMode === BrowserViewMode.SITE_SETTINGS ||
-              viewMode === BrowserViewMode.STORAGE ||
-              viewMode === BrowserViewMode.LANGUAGES ||
-              viewMode === BrowserViewMode.ABOUT) && <Settings />}
+            {[
+              BrowserViewMode.SETTINGS,
+              BrowserViewMode.GENERAL,
+              BrowserViewMode.APPEARANCE,
+              BrowserViewMode.PRIVACY,
+              BrowserViewMode.SITE_SETTINGS,
+              BrowserViewMode.STORAGE,
+              BrowserViewMode.LANGUAGES,
+              BrowserViewMode.ABOUT,
+            ].includes(viewMode) && <Settings />}
 
             {viewMode === BrowserViewMode.DOWNLOADS && (
               <Downloads onNavigate={handleNavigate} />
@@ -218,7 +229,7 @@ const AppContent: React.FC = () => {
             {viewMode === BrowserViewMode.HISTORY && (
               <History
                 onNavigate={handleNavigate}
-                onOpenInNewTab={handleOpenInNewTab}
+                onOpenInNewTab={(url) => createTab(false, url)}
               />
             )}
 
@@ -227,7 +238,23 @@ const AppContent: React.FC = () => {
             )}
 
             {viewMode === BrowserViewMode.LIBRARY && <Library />}
+
             {viewMode === BrowserViewMode.NOTES_LIBRARY && <NotesLibrary />}
+
+            {viewMode === BrowserViewMode.TAB_SWITCHER && (
+              <TabSwitcher
+                tabs={tabs}
+                tabGroups={tabGroups}
+                activeTabId={activeTab.id}
+                onSelectTab={setActiveTabId}
+                onCloseTab={closeTab}
+                onDuplicateTab={(id) => createTab(false, tabs.find(t => t.id === id)?.url)}
+                onCreateGroup={() => {}}
+                onDeleteGroup={() => {}}
+                onUpdateGroup={() => {}}
+                onExit={() => setViewMode(BrowserViewMode.BROWSER)}
+              />
+            )}
           </div>
         )}
       </main>
