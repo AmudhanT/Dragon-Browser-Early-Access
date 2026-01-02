@@ -79,14 +79,14 @@ const currentState = isBoolean ? Boolean(rawState) : rawState;
       if (inverseLabel) {
         return currentState ? 'Enabled' : 'Disabled'; // For Force Dark Mode
       }
-      return getStatusText(currentState as boolean);
+      return getStatusText(currentState as PermissionState | boolean);
     };
 
     const displayStateColor = () => {
       if (inverseLabel && isBoolean) {
         return currentState ? 'text-green-500' : 'text-slate-500';
       }
-      return getStatusColor(currentState);
+      return getStatusColor(currentState as PermissionState | boolean);
     };
 
     return (
