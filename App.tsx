@@ -4,7 +4,7 @@ import { DragonProvider, useDragon } from './DragonContext';
 import { NewTabPage } from './components/NewTabPage';
 import { BrowserViewport, BrowserViewportHandle } from './components/BrowserViewport';
 import { FireProgressBar } from './components/FireProgressBar';
-import { Settings } from './pages/Settings';
+import Settings from './pages/Settings';
 import { Downloads } from './pages/Downloads';
 import { History } from './pages/History';
 import { Bookmarks } from './pages/Bookmarks';
