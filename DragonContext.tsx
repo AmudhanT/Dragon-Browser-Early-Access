@@ -63,6 +63,22 @@ interface DragonContextType {
   openImageContextMenu: (url: string) => void;
   closeImageContextMenu: () => void;
 
+  // Navigation
+  navigateBack: () => void;
+
+  // Downloads
+  removeDownloads: (ids: string[]) => void;
+
+  // Analytics
+  incrementTrackers: (count: number) => void;
+  incrementDataSaved: (bytes: number) => void;
+
+  // Media
+  activeMedia: ActiveMedia | null;
+  closeMedia: () => void;
+  mediaInfoData: MediaInfoData | null;
+  closeMediaInfo: () => void;
+
   t: (key: string) => string;
 }
 
