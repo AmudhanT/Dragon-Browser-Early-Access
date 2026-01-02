@@ -23,10 +23,6 @@ import { normalizeUrl, getDisplayTitle, cleanUrlForDisplay } from './utils/urlUt
 
 import { App as CapacitorApp } from '@capacitor/app';
 
-/* =========================
-   APP CONTENT
-========================= */
-
 const AppContent: React.FC = () => {
   const {
     settings,
@@ -57,10 +53,6 @@ const AppContent: React.FC = () => {
   const [urlInputValue, setUrlInputValue] = useState('');
   const [showExitToast, setShowExitToast] = useState(false);
 
-  /* =========================
-     THEME
-  ========================= */
-
   useEffect(() => {
     const root = document.documentElement;
     const dark =
@@ -71,10 +63,6 @@ const AppContent: React.FC = () => {
     root.classList.toggle('dark', dark);
     root.style.colorScheme = dark ? 'dark' : 'light';
   }, [settings.themeMode]);
-
-  /* =========================
-     BACK BUTTON
-  ========================= */
 
   const handleSmartBack = useCallback(() => {
     if (viewMode !== BrowserViewMode.BROWSER) {
@@ -104,10 +92,6 @@ const AppContent: React.FC = () => {
     };
   }, [handleSmartBack]);
 
-  /* =========================
-     NAVIGATION
-  ========================= */
-
   const handleNavigate = useCallback(
     (input: string) => {
       const normalized = normalizeUrl(
@@ -127,14 +111,9 @@ const AppContent: React.FC = () => {
   const isBookmarked = bookmarks.some(b => b.url === activeTab.url);
   const isHomePage = activeTab.url === 'dragon://home';
 
-  /* =========================
-     RENDER
-  ========================= */
-
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black text-slate-900 dark:text-white overflow-hidden">
+    <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-black">
 
-      {/* HEADER */}
       {viewMode === BrowserViewMode.BROWSER && !isHomePage && (
         <header className="h-[60px] border-b flex items-center px-3 gap-2">
           <AddressBar
@@ -143,128 +122,60 @@ const AppContent: React.FC = () => {
             onUrlChange={setUrlInputValue}
             onUrlSubmit={() => handleNavigate(urlInputValue)}
           />
-
-          <button onClick={() => createTab(false)}>
-            <Plus size={18} />
-          </button>
-
+          <button onClick={() => createTab(false)}><Plus size={18} /></button>
           <button onClick={() => toggleBookmark(activeTab.url, activeTab.title)}>
             <Star size={18} fill={isBookmarked ? 'currentColor' : 'none'} />
           </button>
         </header>
       )}
 
-      {/* MAIN */}
       <main className="flex-1 relative overflow-hidden">
-
         {showExitToast && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-xs bg-black text-white px-4 py-2 rounded">
             Press back again to exit
           </div>
         )}
 
-        {/* BROWSER */}
-        {viewMode === BrowserViewMode.BROWSER && (
-          <>
-            {tabs.map(tab => (
-              <div
-                key={tab.id}
-                className={`absolute inset-0 ${
-                  tab.id === activeTab.id ? 'block' : 'hidden'
-                }`}
-              >
-                {tab.url === 'dragon://home' ? (
-                  <NewTabPage
-                    onNavigate={handleNavigate}
-                    onOpenInNewTab={(url) => createTab(false, url)}
-                    onTriggerSearch={() => {}}
-                  />
-                ) : (
-                  <>
-                    <FireProgressBar
-                      isLoading={tab.isLoading}
-                      themeColor="#f97316"
-                    />
-
-                    <BrowserViewport
-                      ref={(el) => {
-                        if (el) {
-                          viewportRefs.current.set(tab.id, el);
-                        }
-                      }}
-                      activeTab={tab}
-                      onLoadStart={() => setTabLoading(true)}
-                      onLoadEnd={() => setTabLoading(false)}
-                      onReload={reloadTab}
-                      isDesktopMode={settings.isDesktopMode}
-                      javaScriptEnabled={settings.javaScriptEnabled}
-                      isDragonBreath={settings.dragonBreath}
-                      accentColor="#f97316"
-                    />
-                  </>
-                )}
-              </div>
-            ))}
-          </>
-        )}
-
-        {/* OTHER SCREENS */}
-        {viewMode !== BrowserViewMode.BROWSER && (
-          <div className="absolute inset-0 bg-slate-50 dark:bg-black">
-            {[
-              BrowserViewMode.SETTINGS,
-              BrowserViewMode.GENERAL,
-              BrowserViewMode.APPEARANCE,
-              BrowserViewMode.PRIVACY,
-              BrowserViewMode.SITE_SETTINGS,
-              BrowserViewMode.STORAGE,
-              BrowserViewMode.LANGUAGES,
-              BrowserViewMode.ABOUT,
-            ].includes(viewMode) && <Settings />}
-
-            {viewMode === BrowserViewMode.DOWNLOADS && (
-              <Downloads onNavigate={handleNavigate} />
-            )}
-
-            {viewMode === BrowserViewMode.HISTORY && (
-              <History
+        {viewMode === BrowserViewMode.BROWSER && tabs.map(tab => (
+          <div key={tab.id} className={`absolute inset-0 ${tab.id === activeTab.id ? 'block' : 'hidden'}`}>
+            {tab.url === 'dragon://home' ? (
+              <NewTabPage
                 onNavigate={handleNavigate}
                 onOpenInNewTab={(url) => createTab(false, url)}
+                onTriggerSearch={() => {}}
               />
-            )}
-
-            {viewMode === BrowserViewMode.BOOKMARKS && (
-              <Bookmarks onNavigate={handleNavigate} />
-            )}
-
-            {viewMode === BrowserViewMode.LIBRARY && <Library />}
-
-            {viewMode === BrowserViewMode.NOTES_LIBRARY && <NotesLibrary />}
-
-            {viewMode === BrowserViewMode.TAB_SWITCHER && (
-              <TabSwitcher
-                tabs={tabs}
-                tabGroups={tabGroups}
-                activeTabId={activeTab.id}
-                onSelectTab={setActiveTabId}
-                onCloseTab={closeTab}
-                onDuplicateTab={(id) => createTab(false, tabs.find(t => t.id === id)?.url)}
-                onCreateGroup={() => {}}
-                onDeleteGroup={() => {}}
-                onUpdateGroup={() => {}}
-                onExit={() => setViewMode(BrowserViewMode.BROWSER)}
-              />
+            ) : (
+              <>
+                <FireProgressBar isLoading={tab.isLoading} themeColor="#f97316" />
+                <BrowserViewport
+                  ref={(el) => el && viewportRefs.current.set(tab.id, el)}
+                  activeTab={tab}
+                  onLoadStart={() => setTabLoading(true)}
+                  onLoadEnd={() => setTabLoading(false)}
+                  onReload={reloadTab}
+                  isDesktopMode={settings.isDesktopMode}
+                  javaScriptEnabled={settings.javaScriptEnabled}
+                  isDragonBreath={settings.dragonBreath}
+                  accentColor="#f97316"
+                />
+              </>
             )}
           </div>
+        ))}
+
+        {viewMode === BrowserViewMode.TAB_SWITCHER && (
+          <TabSwitcher
+            tabs={tabs}
+            tabGroups={tabGroups}
+            activeTabId={activeTab.id}
+            onSelectTab={setActiveTabId}
+            onCloseTab={closeTab}
+          />
         )}
       </main>
     </div>
   );
 };
-
-/* =========================
-   ROOT
-========================= */
 
 const App: React.FC = () => (
   <DragonProvider>
