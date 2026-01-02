@@ -222,7 +222,7 @@ const addDownload = (url: string, filename: string) =>
       receivedBytes: 0,
       speed: '',
       totalBytes: 0,
-      size: 0, // REQUIRED by DownloadItem
+      size: '0', // REQUIRED by DownloadItem
       timestamp: Date.now(),
       resumable: false,
       priority: 'normal',
