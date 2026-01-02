@@ -305,50 +305,63 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
     translations[settings.language]?.[key] || key;
 
   /* ---------- CONTEXT VALUE ---------- */
+return (
+    <DragonContext.Provider
+      value={{
+        settings,
+        updateSettings,
+        history,
+        addHistory,
+        clearHistory,
+        bookmarks,
+        toggleBookmark,
+        downloads,
+        addDownload,
+        removeDownload,
 
-  return (
-  <DragonContext.Provider
-    value={{
-      settings,
-      updateSettings,
-      history,
-      addHistory,
-      clearHistory,
-      bookmarks,
-      toggleBookmark,
-      downloads,
-      addDownload,
-      removeDownload,
+        viewMode,
+        setViewMode,
 
-      viewMode: BrowserViewMode.BROWSER,
-      setViewMode: () => {},
+        notes,
+        addNote,
+        removeNote,
 
-      notes,
-      addNote,
-      removeNote,
+        sitePermissionRegistry,
+        getSitePermissions,
+        updateSitePermissions,
+        resetSitePermissions,
 
-      sitePermissionRegistry,
-      getSitePermissions,
-      updateSitePermissions,
-      resetSitePermissions,
+        savedPages,
+        savePageOffline,
+        deleteSavedPage,
+        getOfflineContent,
 
-      savedPages,
-      savePageOffline,
-      deleteSavedPage,
-      getOfflineContent,
+        imageContextMenuData,
+        openImageContextMenu,
+        closeImageContextMenu,
 
-      imageContextMenuData: null,
-      openImageContextMenu: () => {},
-      closeImageContextMenu: () => {},
+        pauseDownload,
+        resumeDownload,
+        updateDownloadPriority,
+        moveDownloadOrder,
+        removeDownloads,
 
-      cancelDownload,
-      purgeAllData,
-      openMediaInfo,
-      navigateTo,
+        playMedia,
+        architect,
 
-      t,
-    }}
-  >
-    {children}
-  </DragonContext.Provider>
-);
+        navigateBack,
+        incrementTrackers,
+        incrementDataSaved,
+
+        activeMedia,
+        closeMedia,
+        mediaInfoData,
+        closeMediaInfo,
+
+        t,
+      }}
+    >
+      {children}
+    </DragonContext.Provider>
+  );
+};
