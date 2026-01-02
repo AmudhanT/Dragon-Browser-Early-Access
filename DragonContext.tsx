@@ -24,7 +24,7 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { translations } from './utils/i18n';
 
 /* =========================
-   EXTRA TYPES (REQUIRED)
+   EXTRA TYPES
 ========================= */
 
 export interface Shortcut {
@@ -87,7 +87,11 @@ interface DragonContextType {
   closeImageContextMenu: () => void;
 
   activeMedia: ActiveMedia | null;
-  playMedia: (url: string, filename: string, type: 'video' | 'audio' | 'image') => void;
+  playMedia: (
+    url: string,
+    filename: string,
+    type: 'video' | 'audio' | 'image'
+  ) => void;
   closeMedia: () => void;
 
   mediaInfoData: MediaInfoData | null;
@@ -173,61 +177,54 @@ export const DragonProvider: React.FC<{ children: React.ReactNode }> = ({
 
   /* ---------- BOOKMARKS ---------- */
 
-  const toggleBookmark = (url: string, title: string) => {
-  setBookmarks(prev => {
-    const exists = prev.find(b => b.url === url);
-    if (exists) {
-      return prev.filter(b => b.url !== url);
-    }
-    return [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        url,
-        title,
-      } as Bookmark,
-    ];
-  });
-};
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+
+  const toggleBookmark = (url: string, title: string) =>
+    setBookmarks(prev =>
+      prev.some(b => b.url === url)
+        ? prev.filter(b => b.url !== url)
+        : [...prev, { id: crypto.randomUUID(), url, title }]
+    );
 
   /* ---------- DOWNLOADS ---------- */
 
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
 
-const addDownload = (url: string, filename: string) => {
-  const item: DownloadItem = {
-    id: crypto.randomUUID(),
-    url,
-    filename,
-    status: 'queued',
-    progress: 0,
-    receivedBytes: 0,
-    speed: '',
-    totalBytes: 0,
-    timestamp: Date.now(),
-    resumable: false,
-    priority: 'normal',
-    queueIndex: downloads.length,
-    type: 'other',
-  };
+  const addDownload = (url: string, filename: string) =>
+    setDownloads(prev => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        url,
+        filename,
+        status: 'queued',
+        progress: 0,
+        receivedBytes: 0,
+        speed: '',
+        totalBytes: 0,
+        timestamp: Date.now(),
+        resumable: false,
+        priority: 'normal',
+        queueIndex: prev.length,
+        type: 'other',
+      },
+    ]);
 
-  setDownloads(prev => [...prev, item]);
-};
+  const removeDownload = (id: string) =>
+    setDownloads(prev => prev.filter(d => d.id !== id));
 
-const removeDownload = (id: string) => {
-  setDownloads(prev => prev.filter(d => d.id !== id));
-};
+  const removeDownloads = (ids: string[]) =>
+    setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
 
-const removeDownloads = (ids: string[]) => {
-  setDownloads(prev => prev.filter(d => !ids.includes(d.id)));
-};
+  const pauseDownload = (_id: string) => {};
+  const resumeDownload = (_id: string) => {};
+  const cancelDownload = (_id: string) => {};
+  const updateDownloadPriority = (
+    _id: string,
+    _priority: DownloadPriority
+  ) => {};
+  const moveDownloadOrder = (_id: string, _dir: 'up' | 'down') => {};
 
-// stubs (safe – required by context)
-const pauseDownload = (_id: string) => {};
-const resumeDownload = (_id: string) => {};
-const cancelDownload = (_id: string) => {};
-const updateDownloadPriority = (_id: string, _priority: DownloadPriority) => {};
-const moveDownloadOrder = (_id: string, _direction: 'up' | 'down') => {};
   /* ---------- VIEW ---------- */
 
   const [viewMode, setViewMode] = useState(BrowserViewMode.BROWSER);
@@ -259,51 +256,38 @@ const moveDownloadOrder = (_id: string, _direction: 'up' | 'down') => {};
   const removeShortcut = (id: string) =>
     setSpeedDial(prev => prev.filter(s => s.id !== id));
 
-  const updateSpeedDial = (items: Shortcut[]) =>
-    setSpeedDial(items);
+  const updateSpeedDial = (items: Shortcut[]) => setSpeedDial(items);
 
   /* ---------- IMAGE CONTEXT ---------- */
 
-const [imageContextMenuData, setImageContextMenuData] =
-  useState<ImageContextData | null>(null);
+  const [imageContextMenuData, setImageContextMenuData] =
+    useState<ImageContextData | null>(null);
 
-const openImageContextMenu = (url: string) => {
-  setImageContextMenuData({ url });
-};
+  const openImageContextMenu = (url: string) =>
+    setImageContextMenuData({ url });
 
-const closeImageContextMenu = () => {
-  setImageContextMenuData(null);
-};
+  const closeImageContextMenu = () => setImageContextMenuData(null);
 
-/* ---------- MEDIA ---------- */
+  /* ---------- MEDIA ---------- */
 
-const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
+  const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
 
-const playMedia = (
-  url: string,
-  filename: string,
-  type: 'video' | 'audio' | 'image'
-) => {
-  setActiveMedia({ url, filename, type });
-};
+  const playMedia = (
+    url: string,
+    filename: string,
+    type: 'video' | 'audio' | 'image'
+  ) => setActiveMedia({ url, filename, type });
 
-const closeMedia = () => {
-  setActiveMedia(null);
-};
+  const closeMedia = () => setActiveMedia(null);
 
-const [mediaInfoData, setMediaInfoData] =
-  useState<MediaInfoData | null>(null);
+  const [mediaInfoData, setMediaInfoData] =
+    useState<MediaInfoData | null>(null);
 
-const openMediaInfo = (
-  url: string,
-  type: 'image' | 'video' | 'audio'
-) => {
-  setMediaInfoData({ url, type });
-};
+  const openMediaInfo = (url: string, type: 'image' | 'video' | 'audio') =>
+    setMediaInfoData({ url, type });
 
-const closeMediaInfo = () => {
-  setMediaInfoData(null);
-};
+  const closeMediaInfo = () => setMediaInfoData(null);
+
   /* ---------- SITE PERMS ---------- */
 
   const [sitePermissionRegistry, setSitePermissionRegistry] =
@@ -345,7 +329,14 @@ const closeMediaInfo = () => {
       encoding: Encoding.UTF8,
     });
     setSavedPages(p => [
-      { id: crypto.randomUUID(), url, title, filename, timestamp: Date.now(), size: html.length },
+      {
+        id: crypto.randomUUID(),
+        url,
+        title,
+        filename,
+        timestamp: Date.now(),
+        size: html.length,
+      },
       ...p,
     ]);
     return true;
@@ -357,17 +348,22 @@ const closeMediaInfo = () => {
   const getOfflineContent = async (url: string) => {
     const page = savedPages.find(p => p.url === url);
     if (!page) return null;
-    return (await Filesystem.readFile({
-      path: page.filename,
-      directory: Directory.Data,
-      encoding: Encoding.UTF8,
-    })).data as string;
+    return (
+      await Filesystem.readFile({
+        path: page.filename,
+        directory: Directory.Data,
+        encoding: Encoding.UTF8,
+      })
+    ).data as string;
   };
 
   /* ---------- ANALYTICS ---------- */
 
   const incrementTrackers = (count: number) =>
-    setSettings(p => ({ ...p, trackersBlockedTotal: p.trackersBlockedTotal + count }));
+    setSettings(p => ({
+      ...p,
+      trackersBlockedTotal: p.trackersBlockedTotal + count,
+    }));
 
   const incrementDataSaved = (bytes: number) =>
     setSettings(p => ({ ...p, dataSaved: p.dataSaved + bytes }));
