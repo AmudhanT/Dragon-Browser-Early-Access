@@ -1,0 +1,104 @@
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #000000;
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Custom Scrollbar Styling for internal divs */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area utilities */
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Input reset for mobile */
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* --- DRAGON PRINT PROTOCOL --- */
+@media print {
+  /* When printing-mode is active, hide the app UI */
+  .printing-mode header,
+  .printing-mode nav,
+  .printing-mode aside,
+  .printing-mode .dragon-sidebar, /* The Lair */
+  .printing-mode .tab-switcher,
+  .printing-mode .settings-page,
+  .printing-mode .dragon-overlay {
+    display: none !important;
+  }
+
+  /* Reset layout for the main content to fill the printed page */
+  .printing-mode, .printing-mode body, .printing-mode #root, .printing-mode main {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Maximize the browser viewport content */
+  .printing-mode iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* Hide non-active tabs */
+  .printing-mode div[class*="opacity-0"] {
+    display: none !important;
+  }
+}

@@ -1,0 +1,22 @@
+
+{
+  "short_name": "Dragon",
+  "name": "Dragon Browser Pro+",
+  "description": "High-performance, privacy-focused AI browser.",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3522/3522485.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3522/3522485.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#020617",
+  "background_color": "#020617"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Dragon Search",
+  "description": "High-performance, privacy-focused AI browser.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera",
+    "geolocation"
+  ]
+}
