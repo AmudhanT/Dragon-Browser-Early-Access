@@ -408,61 +408,69 @@ const architect = 'Amudhan T';
 
   /* ---------- CONTEXT VALUE ---------- */
 return (
-    <DragonContext.Provider
-  value={{
-    settings,
-    updateSettings,
-    history,
-    addHistory,
-    clearHistory,
-    bookmarks,
-    toggleBookmark,
-    downloads,
-    addDownload,
-    removeDownload,
+  <DragonContext.Provider
+    value={{
+      settings,
+      updateSettings,
 
-    pauseDownload,
-    resumeDownload,
-    updateDownloadPriority,
-    moveDownloadOrder,
-    removeDownloads,
+      history,
+      addHistory,
+      clearHistory,
 
-    viewMode,
-    setViewMode,
-    navigateBack,
-    navigateTo,
+      bookmarks,
+      toggleBookmark,
 
-    notes,
-    addNote,
-    removeNote,
+      downloads,
+      addDownload,
+      removeDownload,
+      removeDownloads,
+      pauseDownload,
+      resumeDownload,
+      cancelDownload,
+      updateDownloadPriority,
+      moveDownloadOrder,
 
-    sitePermissionRegistry,
-    getSitePermissions,
-    updateSitePermissions,
-    resetSitePermissions,
+      viewMode,
+      setViewMode,
+      navigateTo,
+      navigateBack,
 
-    savedPages,
-    savePageOffline,
-    deleteSavedPage,
-    getOfflineContent,
+      notes,
+      addNote,
+      removeNote,
+      notesEntrySource,
+      setNotesEntrySource,
 
-    imageContextMenuData,
-    openImageContextMenu,
-    closeImageContextMenu,
+      sitePermissionRegistry,
+      getSitePermissions,
+      updateSitePermissions,
+      resetSitePermissions,
 
-    incrementTrackers,
-    incrementDataSaved,
+      savedPages,
+      savePageOffline,
+      deleteSavedPage,
+      getOfflineContent,
 
-    activeMedia,
-    playMedia,
-    closeMedia,
+      imageContextMenuData,
+      openImageContextMenu,
+      closeImageContextMenu,
 
-    mediaInfoData,
-    openMediaInfo,
-    closeMediaInfo,
+      activeMedia,
+      playMedia,
+      closeMedia,
 
-    purgeAllData,
-    architect,
-    t,
-  }}
->
+      mediaInfoData,
+      openMediaInfo,
+      closeMediaInfo,
+
+      incrementTrackers,
+      incrementDataSaved,
+
+      purgeAllData,
+      architect,
+      t,
+    }}
+  >
+    {children}
+  </DragonContext.Provider>
+);
