@@ -58,7 +58,7 @@ const AppContent: React.FC = () => {
   const [showExitToast, setShowExitToast] = useState(false);
 
   /* =========================
-     THEME
+     THEME SYNC
   ========================= */
 
   useEffect(() => {
@@ -73,7 +73,7 @@ const AppContent: React.FC = () => {
   }, [settings.themeMode]);
 
   /* =========================
-     BACK BUTTON
+     SMART BACK
   ========================= */
 
   const handleSmartBack = useCallback(() => {
@@ -100,7 +100,7 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const sub = CapacitorApp.addListener('backButton', handleSmartBack);
     return () => {
-      sub.then(l => l.remove());
+      sub.then(s => s.remove());
     };
   }, [handleSmartBack]);
 
@@ -115,6 +115,7 @@ const AppContent: React.FC = () => {
         settings.searchEngine,
         settings.httpsOnlyMode
       );
+
       setUrlInputValue(cleanUrlForDisplay(normalized));
       addHistory({ url: normalized, title: getDisplayTitle(normalized) });
       navigateTab(normalized);
@@ -171,7 +172,11 @@ const AppContent: React.FC = () => {
                 className={`absolute inset-0 ${tab.id === activeTab.id ? 'block' : 'hidden'}`}
               >
                 {tab.url === 'dragon://home' ? (
-                  <NewTabPage onNavigate={handleNavigate} />
+                  <NewTabPage
+                    onNavigate={handleNavigate}
+                    onOpenInNewTab={(url) => handleNavigate(url)}
+                    onTriggerSearch={() => {}}
+                  />
                 ) : (
                   <>
                     <FireProgressBar isLoading={tab.isLoading} themeColor="#f97316" />
@@ -185,6 +190,8 @@ const AppContent: React.FC = () => {
                       onReload={reloadTab}
                       isDesktopMode={settings.isDesktopMode}
                       javaScriptEnabled={settings.javaScriptEnabled}
+                      isDragonBreath={settings.dragonBreath}
+                      accentColor="#f97316"
                     />
                   </>
                 )}
@@ -193,21 +200,41 @@ const AppContent: React.FC = () => {
           </>
         )}
 
-        {/* OTHER VIEWS */}
+        {/* OTHER SCREENS */}
         {viewMode !== BrowserViewMode.BROWSER && (
           <div className="absolute inset-0 bg-slate-50 dark:bg-black">
-            {(viewMode === BrowserViewMode.SETTINGS ||
-              viewMode === BrowserViewMode.GENERAL ||
-              viewMode === BrowserViewMode.APPEARANCE ||
-              viewMode === BrowserViewMode.PRIVACY ||
-              viewMode === BrowserViewMode.SITE_SETTINGS ||
-              viewMode === BrowserViewMode.STORAGE ||
-              viewMode === BrowserViewMode.LANGUAGES ||
-              viewMode === BrowserViewMode.ABOUT) && <Settings />}
+            {[
+              BrowserViewMode.SETTINGS,
+              BrowserViewMode.GENERAL,
+              BrowserViewMode.APPEARANCE,
+              BrowserViewMode.PRIVACY,
+              BrowserViewMode.SITE_SETTINGS,
+              BrowserViewMode.STORAGE,
+              BrowserViewMode.LANGUAGES,
+              BrowserViewMode.ABOUT,
+            ].includes(viewMode) && <Settings />}
 
-            {viewMode === BrowserViewMode.DOWNLOADS && <Downloads onNavigate={handleNavigate} />}
-            {viewMode === BrowserViewMode.HISTORY && <History onNavigate={handleNavigate} />}
-            {viewMode === BrowserViewMode.BOOKMARKS && <Bookmarks onNavigate={handleNavigate} />}
+            {viewMode === BrowserViewMode.DOWNLOADS && (
+              <Downloads
+                onNavigate={handleNavigate}
+                onOpenInNewTab={(url) => handleNavigate(url)}
+              />
+            )}
+
+            {viewMode === BrowserViewMode.HISTORY && (
+              <History
+                onNavigate={handleNavigate}
+                onOpenInNewTab={(url) => handleNavigate(url)}
+              />
+            )}
+
+            {viewMode === BrowserViewMode.BOOKMARKS && (
+              <Bookmarks
+                onNavigate={handleNavigate}
+                onOpenInNewTab={(url) => handleNavigate(url)}
+              />
+            )}
+
             {viewMode === BrowserViewMode.LIBRARY && <Library />}
             {viewMode === BrowserViewMode.NOTES_LIBRARY && <NotesLibrary />}
 
@@ -218,7 +245,7 @@ const AppContent: React.FC = () => {
                 activeTabId={activeTab.id}
                 onSelectTab={setActiveTabId}
                 onCloseTab={closeTab}
-                onNewTab={() => createTab(false)}
+                onCreateTab={() => createTab(false)}
               />
             )}
           </div>
